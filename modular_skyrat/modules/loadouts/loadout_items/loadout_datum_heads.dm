@@ -195,9 +195,6 @@ GLOBAL_LIST_INIT(loadout_helmets, generate_loadout_items(/datum/loadout_item/hea
 	name = "Bear Pelt"
 	item_path = /obj/item/clothing/head/bearpelt
 
-/datum/loadout_item/head/ushanka
-	name ="Ushanka"
-	item_path = /obj/item/clothing/head/ushanka
 
 /datum/loadout_item/head/plague_doctor
 	name = "Plague Doctor Cap"
@@ -275,6 +272,10 @@ GLOBAL_LIST_INIT(loadout_helmets, generate_loadout_items(/datum/loadout_item/hea
 /datum/loadout_item/head/ushanka
 	name = "Ushanka"
 	item_path = /obj/item/clothing/head/ushanka
+
+/datum/loadout_item/head/ushanka/soviet
+	name = "Soviet Ushanka"
+	item_path = /obj/item/clothing/head/ushanka/soviet
 
 /datum/loadout_item/head/wrussian
 	name = "Black Papakha"
@@ -450,7 +451,7 @@ GLOBAL_LIST_INIT(loadout_helmets, generate_loadout_items(/datum/loadout_item/hea
 	item_path = /obj/item/clothing/head/cowboyhat/widesec
 	restricted_roles = list("Warden","Detective","Security Medic","Security Sergeant","Security Officer","Head of Security","Civil Disputes Officer","Corrections Officer")
 
-/datum/loadout_item/head/ushanka
+/datum/loadout_item/head/ushanka/sec
 	name = "Security Ushanka"
 	item_path = /obj/item/clothing/head/ushankasec
 	restricted_roles = list("Warden","Detective","Security Medic","Security Sergeant","Security Officer","Head of Security","Civil Disputes Officer","Corrections Officer")
@@ -562,6 +563,10 @@ GLOBAL_LIST_INIT(loadout_helmets, generate_loadout_items(/datum/loadout_item/hea
 /datum/loadout_item/head/dominacap
 	name = "Dominant cap"
 	item_path = /obj/item/clothing/head/domina_cap
+
+/datum/loadout_item/head/fashionable_cap
+	name = "Fashionable baseball cap"
+	item_path = /obj/item/clothing/head/soft/yankee
 
 // Donator hats here
 /datum/loadout_item/head/donator
