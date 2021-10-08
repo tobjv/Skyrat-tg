@@ -34,10 +34,18 @@
 
 /datum/examine_panel/ui_data(mob/user)
 	var/list/data = list()
-	data["character_name"] = holder.name
+
+	var/skipface = (wear_mask && (wear_mask.flags_inv & HIDEFACE)) || (head && (head.flags_inv & HIDEFACE))
+	var/name = skipface ? "Unknown" : holder.name
+	var/flavor_text = skipface ? "Obscured" :  holder.dna.features["flavor_text"]
+	var/custom_species = skipface ? "Obscured" : holder.dna.features["custom_species"]
+	var/custom_species_lore = skipface ? "Obscured" : holder.dna.features["custom_species_lore"]
+
+	data["obscured"] = skipface ? TRUE : FALSE
+	data["character_name"] = name
 	data["assigned_map"] = examine_panel_screen.assigned_map
-	data["flavor_text"] = holder.dna.features["flavor_text"]
+	data["flavor_text"] = flavor_text
 	data["ooc_notes"] = holder.dna.features["ooc_notes"]
-	data["custom_species"] = holder.dna.features["custom_species"]
-	data["custom_species_lore"] = holder.dna.features["custom_species_lore"]
+	data["custom_species"] = custom_species
+	data["custom_species_lore"] = custom_species_lore
 	return data
