@@ -1,18 +1,18 @@
 /*
- *	These absorb the functionality of the plant bag, ore satchel, etc.
- *	They use the use_to_pickup, quick_gather, and quick_empty functions
- *	that were already defined in weapon/storage, but which had been
- *	re-implemented in other classes.
+ * These absorb the functionality of the plant bag, ore satchel, etc.
+ * They use the use_to_pickup, quick_gather, and quick_empty functions
+ * that were already defined in weapon/storage, but which had been
+ * re-implemented in other classes.
  *
- *	Contains:
- *		Trash Bag
- *		Mining Satchel
- *		Plant Bag
- *		Sheet Snatcher
- *		Book Bag
+ * Contains:
+ * Trash Bag
+ * Mining Satchel
+ * Plant Bag
+ * Sheet Snatcher
+ * Book Bag
  *      Biowaste Bag
  *
- *	-Sayu
+ * -Sayu
  */
 
 //  Generic non-item
@@ -39,7 +39,6 @@
 	inhand_icon_state = "trashbag"
 	lefthand_file = 'icons/mob/inhands/equipment/custodial_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/custodial_righthand.dmi'
-	slot_flags = ITEM_SLOT_BELT //SKYRAT EDIT CHANGE - QOL - ORIGINAL: none
 	var/insertable = TRUE
 
 /obj/item/storage/bag/trash/ComponentInitialize()
@@ -51,7 +50,7 @@
 	STR.set_holdable(null, list(/obj/item/disk/nuclear))
 
 /obj/item/storage/bag/trash/suicide_act(mob/user)
-	user.visible_message("<span class='suicide'>[user] puts [src] over [user.p_their()] head and starts chomping at the insides! Disgusting!</span>")
+	user.visible_message(span_suicide("[user] puts [src] over [user.p_their()] head and starts chomping at the insides! Disgusting!"))
 	playsound(loc, 'sound/items/eatfood.ogg', 50, TRUE, -1)
 	return (TOXLOSS)
 
@@ -65,6 +64,7 @@
 			icon_state = "[initial(icon_state)]1"
 		else
 			icon_state = "[initial(icon_state)]"
+	return ..()
 
 /obj/item/storage/bag/trash/cyborg
 	insertable = FALSE
@@ -73,9 +73,9 @@
 	if(insertable)
 		J.put_in_cart(src, user)
 		J.mybag=src
-		J.update_icon()
+		J.update_appearance()
 	else
-		to_chat(user, "<span class='warning'>You are unable to fit your [name] into the [J.name].</span>")
+		to_chat(user, span_warning("You are unable to fit your [name] into the [J.name]."))
 		return
 
 /obj/item/storage/bag/trash/filled
@@ -83,7 +83,7 @@
 /obj/item/storage/bag/trash/filled/PopulateContents()
 	. = ..()
 	for(var/i in 1 to rand(1, 7))
-		new /obj/effect/spawner/lootdrop/garbage_spawner(src)
+		new /obj/effect/spawner/random/trash/garbage(src)
 	update_icon_state()
 
 /obj/item/storage/bag/trash/bluespace
@@ -106,7 +106,7 @@
 //        Mining Satchel
 // -----------------------------
 
-/obj/item/storage/bag/ore
+/obj/item/storage/bag/ore//SKYRAT EDIT - ICON OVERRIDEN BY AESTHETICS - SEE MODULE
 	name = "mining satchel"
 	desc = "This little bugger can be used to store and transport ores."
 	icon = 'icons/obj/mining.dmi'
@@ -143,6 +143,7 @@
 		listeningTo = null
 
 /obj/item/storage/bag/ore/proc/Pickup_ores(mob/living/user)
+	SIGNAL_HANDLER
 	var/show_message = FALSE
 	var/obj/structure/ore_box/box
 	var/turf/tile = user.loc
@@ -162,17 +163,17 @@
 				show_message = TRUE
 			else
 				if(!spam_protection)
-					to_chat(user, "<span class='warning'>Your [name] is full and can't hold any more!</span>")
+					to_chat(user, span_warning("Your [name] is full and can't hold any more!"))
 					spam_protection = TRUE
 					continue
 	if(show_message)
 		playsound(user, "rustle", 50, TRUE)
 		if (box)
-			user.visible_message("<span class='notice'>[user] offloads the ores beneath [user.p_them()] into [box].</span>", \
-			"<span class='notice'>You offload the ores beneath you into your [box].</span>")
+			user.visible_message(span_notice("[user] offloads the ores beneath [user.p_them()] into [box]."), \
+			span_notice("You offload the ores beneath you into your [box]."))
 		else
-			user.visible_message("<span class='notice'>[user] scoops up the ores beneath [user.p_them()].</span>", \
-				"<span class='notice'>You scoop up the ores beneath you with your [name].</span>")
+			user.visible_message(span_notice("[user] scoops up the ores beneath [user.p_them()]."), \
+				span_notice("You scoop up the ores beneath you with your [name]."))
 	spam_protection = FALSE
 
 /obj/item/storage/bag/ore/cyborg
@@ -221,14 +222,15 @@
 	desc = "For the enterprising botanist on the go. Less efficient than the stationary model, it creates one seed per plant."
 	icon_state = "portaseeder"
 
-/obj/item/storage/bag/plants/portaseeder/verb/dissolve_contents()
-	set name = "Activate Seed Extraction"
-	set category = "Object"
-	set desc = "Activate to convert your plants into plantable seeds."
-	if(usr.incapacitated())
+/obj/item/storage/bag/plants/portaseeder/examine(mob/user)
+	. = ..()
+	. += span_notice("Ctrl-click to activate seed extraction.")
+
+/obj/item/storage/bag/plants/portaseeder/CtrlClick(mob/user)
+	if(user.incapacitated())
 		return
-	for(var/obj/item/O in contents)
-		seedify(O, 1)
+	for(var/obj/item/plant in contents)
+		seedify(plant, 1)
 
 // -----------------------------
 //        Sheet Snatcher
@@ -251,8 +253,7 @@
 	var/datum/component/storage/concrete/stack/STR = GetComponent(/datum/component/storage/concrete/stack)
 	STR.allow_quick_empty = TRUE
 	STR.set_holdable(list(
-			/obj/item/stack/sheet,
-			/obj/item/stack/tile/bronze
+			/obj/item/stack/sheet
 			),
 		list(
 			/obj/item/stack/sheet/mineral/sandstone,
@@ -324,11 +325,17 @@
 	STR.set_holdable(list(
 		/obj/item/reagent_containers/food,
 		/obj/item/reagent_containers/glass,
+		/obj/item/clothing/mask/cigarette,
+		/obj/item/storage/fancy,
+		/obj/item/storage/box/gum,
+		/obj/item/storage/box/matches,
 		/obj/item/food,
-		/obj/item/kitchen/knife,
-		/obj/item/kitchen/rollingpin,
-		/obj/item/kitchen/fork,
-		)) //Should cover: Bottles, Beakers, Bowls, Booze, Glasses, Food, and Kitchen Tools.
+		/obj/item/trash,
+		/obj/item/lighter,
+		/obj/item/rollingpaper,
+		/obj/item/kitchen,
+		/obj/item/organ,
+		)) //Should cover: Bottles, Beakers, Bowls, Booze, Glasses, Food, Food Containers, Food Trash, Organs, Tobacco Products, Lighters, and Kitchen Tools.
 	STR.insert_preposition = "on"
 	STR.max_items = 7
 
@@ -349,7 +356,7 @@
 	if(ishuman(M))
 		if(prob(10))
 			M.Paralyze(40)
-	update_icon()
+	update_appearance()
 
 /obj/item/storage/bag/tray/proc/do_scatter(obj/item/I)
 	for(var/i in 1 to rand(1,2))
@@ -365,13 +372,13 @@
 		I_copy.layer = FLOAT_LAYER
 		. += I_copy
 
-/obj/item/storage/bag/tray/Entered()
+/obj/item/storage/bag/tray/Entered(atom/movable/arrived, atom/old_loc, list/atom/old_locs)
 	. = ..()
-	update_icon()
+	update_appearance()
 
-/obj/item/storage/bag/tray/Exited()
+/obj/item/storage/bag/tray/Exited(atom/movable/gone, direction)
 	. = ..()
-	update_icon()
+	update_appearance()
 
 /obj/item/storage/bag/tray/cafeteria
 	name = "cafeteria tray"
@@ -380,7 +387,7 @@
 	desc = "A cheap metal tray to pile today's meal onto."
 
 /*
- *	Chemistry bag
+ * Chemistry bag
  */
 
 /obj/item/storage/bag/chemistry
@@ -437,7 +444,9 @@
 		/obj/item/food/deadmouse,
 		/obj/item/food/monkeycube,
 		/obj/item/organ,
-		/obj/item/bodypart
+		/obj/item/bodypart,
+		/obj/item/petri_dish,
+		/obj/item/swab
 		))
 
 /*
@@ -450,6 +459,7 @@
 	icon_state = "construction_bag"
 	worn_icon_state = "construction_bag"
 	desc = "A bag for storing small construction components."
+	slot_flags = ITEM_SLOT_BELT | ITEM_SLOT_POCKETS
 	resistance_flags = FLAMMABLE
 
 /obj/item/storage/bag/construction/ComponentInitialize()

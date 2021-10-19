@@ -14,25 +14,18 @@
 	if(!msg)
 		return
 
-	if(!(prefs.skyrat_toggles & CHAT_LOOC))
-		to_chat(src, "<span class='danger'> You have LOOC muted.</span>")
-		return
-	if(is_banned_from(mob, "OOC"))
-		to_chat(src, "<span class='danger'>You have been banned from OOC.</span>")
-		return
-
 	if(!holder)
 		if(!GLOB.looc_allowed)
 			to_chat(src, "<span class='danger'> LOOC is globally muted</span>")
 			return
-		if(prefs.muted & MUTE_OOC)
-			to_chat(src, "<span class='danger'> You cannot use OOC (muted).</span>")
-			return
 		if(handle_spam_prevention(msg,MUTE_OOC))
 			return
 		if(findtext(msg, "byond://"))
-			to_chat(src, "<B>Advertising other servers is not allowed.</B>")
+			to_chat(src, "<span class='boldannounce'><B>Advertising other servers is not allowed.</B></span>")
 			log_admin("[key_name(src)] has attempted to advertise in LOOC: [msg]")
+			return
+		if(prefs.muted & MUTE_LOOC)
+			to_chat(src, "<span class='danger'>You cannot use LOOC (muted).</span>")
 			return
 		if(mob.stat)
 			to_chat(src, "<span class='danger'>You cannot use LOOC while unconscious or dead.</span>")  //Skyrat change
@@ -46,22 +39,33 @@
 	mob.log_talk(msg,LOG_OOC, tag="LOOC")
 
 	var/list/heard = get_hearers_in_view(7, get_top_level_mob(src.mob))
+
+	//so the ai can post looc text
+	if(istype(mob,/mob/living/silicon/ai))
+		var/mob/living/silicon/ai/ai = mob
+		heard = get_hearers_in_view(7, ai.eyeobj)
+	//so the ai can see looc text
+	for(var/mob/living/silicon/ai/ai as anything in GLOB.ai_list)
+		if(ai.client && !(ai in heard) && (ai.eyeobj in heard))
+			heard += ai
+
+	var/list/admin_seen = list()
 	for(var/mob/M in heard)
 		if(!M.client)
 			continue
 		var/client/C = M.client
-		if (C in GLOB.admins)
+		if (C.holder)
+			admin_seen[C] = TRUE
 			continue //they are handled after that
 
 		if (isobserver(M))
 			continue //Also handled later.
 
-		if(C.prefs.skyrat_toggles & CHAT_LOOC)
-			to_chat(C, "<span class='looc'><span class='prefix'>LOOC:</span> <EM>[src.mob.name]:</EM> <span class='message'>[msg]</span></span>")
+		to_chat(C, "<span class='looc'><span class='prefix'>LOOC:</span> <EM>[src.mob.name]:</EM> <span class='message'>[msg]</span></span>")
 
-	for(var/client/C in GLOB.admins)
-		if(C.prefs.skyrat_toggles & CHAT_LOOC)
-			if (C.mob in heard)
-				to_chat(C, "<span class='looc'>[ADMIN_FLW(usr)] <span class='prefix'>LOOC:</span> <EM>[src.key]/[src.mob.name]:</EM> <span class='message'>[msg]</span></span>")
-			else if (!(C.prefs.skyrat_toggles & CHAT_LOOC_ADMIN))
-				to_chat(C, "<span class='looc'>[ADMIN_FLW(usr)] <span class='prefix'>(R)LOOC:</span> <EM>[src.key]/[src.mob.name]:</EM> <span class='message'>[msg]</span></span>")
+	for(var/cli in GLOB.admins)
+		var/client/C = cli
+		if (admin_seen[C])
+			to_chat(C, "<span class='looc'>[ADMIN_FLW(usr)] <span class='prefix'>LOOC:</span> <EM>[src.key]/[src.mob.name]:</EM> <span class='message'>[msg]</span></span>")
+		else if (C.prefs.read_preference(/datum/preference/toggle/admin/see_looc))
+			to_chat(C, "<span class='rlooc'>[ADMIN_FLW(usr)] <span class='prefix'>(R)LOOC:</span> <EM>[src.key]/[src.mob.name]:</EM> <span class='message'>[msg]</span></span>")

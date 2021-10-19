@@ -1,5 +1,5 @@
 /**********************Mining Scanners**********************/
-/obj/item/mining_scanner
+/obj/item/mining_scanner//SKYRAT EDIT - ICON OVERRIDEN BY AESTHETICS - SEE MODULE
 	desc = "A scanner that checks surrounding rock for useful minerals; it can also be used to stop gibtonite detonations."
 	name = "manual mining scanner"
 	icon = 'icons/obj/device.dmi'
@@ -44,7 +44,7 @@
 	var/current_cooldown = 0
 	var/range = 7
 
-/obj/item/t_scanner/adv_mining_scanner/cyborg/Initialize()
+/obj/item/t_scanner/adv_mining_scanner/cyborg/Initialize(mapload)
 	. = ..()
 	toggle_on()
 
@@ -76,12 +76,12 @@
 /obj/effect/temp_visual/mining_overlay
 	plane = FULLSCREEN_PLANE
 	layer = FLASH_LAYER
-	icon = 'icons/effects/ore_visuals.dmi'
+	icon = 'modular_skyrat/modules/xenoarch/icons/ore_visuals.dmi' //SKYRAT EDIT ADDITION - XENOARCHAEOLOGY
 	appearance_flags = 0 //to avoid having TILE_BOUND in the flags, so that the 480x480 icon states let you see it no matter where you are
 	duration = 35
 	pixel_x = -224
 	pixel_y = -224
 
-/obj/effect/temp_visual/mining_overlay/Initialize()
+/obj/effect/temp_visual/mining_overlay/Initialize(mapload)
 	. = ..()
 	animate(src, alpha = 0, time = duration, easing = EASE_IN)

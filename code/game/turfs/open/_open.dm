@@ -2,13 +2,64 @@
 	plane = FLOOR_PLANE
 	var/slowdown = 0 //negative for faster, positive for slower
 
-	var/postdig_icon_change = FALSE
-	var/postdig_icon
-
 	var/footstep = null
 	var/barefootstep = null
 	var/clawfootstep = null
 	var/heavyfootstep = null
+
+	var/datum/pollution/pollution //SKYRAT EDIT ADDITION /// Pollution of this turf
+
+//SKYRAT EDIT ADDITION
+//Consider making all of these behaviours a smart component/element? Something that's only applied wherever it needs to be
+//Could probably have the variables on the turf level, and the behaviours being activated/deactived on the component level as the vars are updated
+/turf/open/CanPass(atom/movable/A, turf/T)
+	if(isliving(A))
+		var/turf/AT = get_turf(A)
+		if(AT && AT.turf_height - turf_height <= -TURF_HEIGHT_BLOCK_THRESHOLD)
+			return FALSE
+	return ..()
+
+/turf/open/Exit(atom/movable/mover, atom/newloc)
+	. = ..()
+	if(. && isliving(mover) && mover.has_gravity() && isturf(newloc))
+		var/mob/living/L = mover
+		var/turf/T = get_turf(newloc)
+		if(T && T.turf_height - turf_height <= -TURF_HEIGHT_BLOCK_THRESHOLD)
+			L.on_fall()
+			L.onZImpact(T, 1)
+
+
+/turf/open/MouseDrop_T(mob/living/M, mob/living/user)
+	if(!isliving(M) || !isliving(user) || !M.has_gravity() || !Adjacent(user) || !M.Adjacent(user) || !(user.stat == CONSCIOUS) || user.body_position == LYING_DOWN)
+		return
+	if(!M.has_gravity())
+		return
+	var/turf/T = get_turf(M)
+	if(!T)
+		return
+	if(T.turf_height - turf_height <= -TURF_HEIGHT_BLOCK_THRESHOLD)
+		//Climb up
+		if(user == M)
+			M.visible_message("<span class='notice'>[user] is climbing onto [src]", \
+								"<span class='notice'>You start climbing onto [src].</span>")
+		else
+			M.visible_message("<span class='notice'>[user] is pulling [M] onto [src]", \
+								"<span class='notice'>You start pulling [M] onto [src].</span>")
+		if(do_mob(user, M, 2 SECONDS))
+			M.forceMove(src)
+		return
+	if(turf_height - T.turf_height <= -TURF_HEIGHT_BLOCK_THRESHOLD)
+		//Climb down
+		if(user == M)
+			M.visible_message("<span class='notice'>[user] is descending down to [src]", \
+								"<span class='notice'>You start lowering yourself to [src].</span>")
+		else
+			M.visible_message("<span class='notice'>[user] is lowering [M] down to [src]", \
+								"<span class='notice'>You start lowering [M] down to [src].</span>")
+		if(do_mob(user, M, 2 SECONDS))
+			M.forceMove(src)
+		return
+//SKYRAT EDIT END
 
 //direction is direction of travel of A
 /turf/open/zPassIn(atom/movable/A, direction, turf/source)
@@ -82,10 +133,10 @@
 	. = ..()
 	AddComponent(/datum/component/wet_floor, TURF_WET_SUPERLUBE, INFINITY, 0, INFINITY, TRUE)
 
-/turf/open/indestructible/honk/Entered(atom/movable/AM)
-	..()
-	if(ismob(AM))
-		playsound(src,sound,50,TRUE)
+/turf/open/indestructible/honk/Entered(atom/movable/arrived, atom/old_loc, list/atom/old_locs)
+	. = ..()
+	if(ismob(arrived))
+		playsound(src, sound, 50, TRUE)
 
 /turf/open/indestructible/necropolis
 	name = "necropolis floor"
@@ -100,7 +151,7 @@
 	heavyfootstep = FOOTSTEP_LAVA
 	tiled_dirt = FALSE
 
-/turf/open/indestructible/necropolis/Initialize()
+/turf/open/indestructible/necropolis/Initialize(mapload)
 	. = ..()
 	if(prob(12))
 		icon_state = "necro[rand(2,3)]"
@@ -113,6 +164,7 @@
 	icon = 'icons/turf/boss_floors.dmi'
 	icon_state = "boss"
 	baseturfs = /turf/open/indestructible/boss
+	planetary_atmos = TRUE
 	initial_gas_mix = LAVALAND_DEFAULT_ATMOS
 
 /turf/open/indestructible/boss/air
@@ -120,6 +172,7 @@
 
 /turf/open/indestructible/hierophant
 	icon = 'icons/turf/floors/hierophant_floor.dmi'
+	planetary_atmos = TRUE
 	initial_gas_mix = LAVALAND_DEFAULT_ATMOS
 	baseturfs = /turf/open/indestructible/hierophant
 	smoothing_flags = SMOOTH_CORNERS
@@ -142,7 +195,7 @@
 
 /turf/open/indestructible/binary
 	name = "tear in the fabric of reality"
-	CanAtmosPass = ATMOS_PASS_NO
+	can_atmos_pass = ATMOS_PASS_NO
 	baseturfs = /turf/open/indestructible/binary
 	icon_state = "binary"
 	footstep = null
@@ -160,26 +213,26 @@
 	update_visuals()
 
 	current_cycle = times_fired
-	ImmediateCalculateAdjacentTurfs()
+	immediate_calculate_adjacent_turfs()
 	for(var/i in atmos_adjacent_turfs)
 		var/turf/open/enemy_tile = i
 		var/datum/gas_mixture/enemy_air = enemy_tile.return_air()
 		if(!excited && air.compare(enemy_air))
 			//testing("Active turf found. Return value of compare(): [is_active]")
 			excited = TRUE
-			SSair.active_turfs |= src
+			SSair.active_turfs += src
 
-/turf/open/proc/GetHeatCapacity()
+/turf/open/GetHeatCapacity()
 	. = air.heat_capacity()
 
-/turf/open/proc/GetTemperature()
+/turf/open/GetTemperature()
 	. = air.temperature
 
-/turf/open/proc/TakeTemperature(temp)
+/turf/open/TakeTemperature(temp)
 	air.temperature += temp
-	air_update_turf()
+	air_update_turf(FALSE, FALSE)
 
-/turf/open/proc/freon_gas_act()
+/turf/open/proc/freeze_turf()
 	for(var/obj/I in contents)
 		if(I.resistance_flags & FREEZE_PROOF)
 			continue
@@ -220,7 +273,7 @@
 			if(C.m_intent == MOVE_INTENT_WALK && (lube&NO_SLIP_WHEN_WALKING))
 				return FALSE
 		if(!(lube&SLIDE_ICE))
-			to_chat(C, "<span class='notice'>You slipped[ O ? " on the [O.name]" : ""]!</span>")
+			to_chat(C, span_notice("You slipped[ O ? " on the [O.name]" : ""]!"))
 			playsound(C.loc, 'sound/misc/slip.ogg', 50, TRUE, -3)
 
 		SEND_SIGNAL(C, COMSIG_ON_CARBON_SLIP)
@@ -231,8 +284,8 @@
 		var/olddir = C.dir
 		C.moving_diagonally = 0 //If this was part of diagonal move slipping will stop it.
 		if(!(lube & SLIDE_ICE))
-			C.Knockdown(knockdown_amount)
-			C.Paralyze(paralyze_amount)
+			C.StaminaKnockdown(10, TRUE) //SKYRAT EDIT CHANGE
+			//C.Paralyze(paralyze_amount) - SKYRAT EDIT REMOVAL
 			C.stop_pulling()
 		else
 			C.Knockdown(20)
@@ -246,7 +299,7 @@
 		else if(lube&SLIDE_ICE)
 			if(C.force_moving) //If we're already slipping extend it
 				qdel(C.force_moving)
-			new /datum/forced_movement(C, get_ranged_target_turf(C, olddir, 1), 1, FALSE)	//spinning would be bad for ice, fucks up the next dir
+			new /datum/forced_movement(C, get_ranged_target_turf(C, olddir, 1), 1, FALSE) //spinning would be bad for ice, fucks up the next dir
 		return TRUE
 
 /turf/open/proc/MakeSlippery(wet_setting = TURF_WET_WATER, min_wet_time = 0, wet_time_to_add = 0, max_wet_time = MAXIMUM_WET_TIME, permanent)
@@ -261,21 +314,27 @@
 /turf/open/proc/ClearWet()//Nuclear option of immediately removing slipperyness from the tile instead of the natural drying over time
 	qdel(GetComponent(/datum/component/wet_floor))
 
-/turf/open/rad_act(pulse_strength)
+/turf/open/rad_act(strength)
 	. = ..()
-	if (air.gases[/datum/gas/carbon_dioxide] && air.gases[/datum/gas/oxygen])
-		pulse_strength = min(pulse_strength, air.gases[/datum/gas/carbon_dioxide][MOLES] * 1000, air.gases[/datum/gas/oxygen][MOLES] * 2000) //Ensures matter is conserved properly
-		air.gases[/datum/gas/carbon_dioxide][MOLES] = max(air.gases[/datum/gas/carbon_dioxide][MOLES] - (pulse_strength * 0.001),0)
-		air.gases[/datum/gas/oxygen][MOLES] = max(air.gases[/datum/gas/oxygen][MOLES]-(pulse_strength * 0.0005),0)
-		air.assert_gas(/datum/gas/pluoxium)
-		air.gases[/datum/gas/pluoxium][MOLES] +=(pulse_strength * 0.00025)
-		air.garbage_collect()
-		air_update_turf()
-	if (air.gases[/datum/gas/hydrogen])
-		pulse_strength = min(pulse_strength, air.gases[/datum/gas/hydrogen][MOLES] * 1000)
-		air.gases[/datum/gas/hydrogen][MOLES] = max(air.gases[/datum/gas/hydrogen][MOLES] - (pulse_strength * 0.001), 0)
-		air.assert_gas(/datum/gas/tritium)
-		air.gases[/datum/gas/tritium][MOLES] += (pulse_strength * 0.001)
-		air.garbage_collect()
-		air_update_turf()
+	var/gas_change = FALSE
+	var/list/cached_gases = air.gases
+	if(cached_gases[/datum/gas/oxygen] && cached_gases[/datum/gas/carbon_dioxide] && air.temperature <= PLUOXIUM_TEMP_CAP)
+		gas_change = TRUE
+		var/pulse_strength = min(strength, cached_gases[/datum/gas/oxygen][MOLES] * 1000, cached_gases[/datum/gas/carbon_dioxide][MOLES] * 2000)
+		cached_gases[/datum/gas/carbon_dioxide][MOLES] -= pulse_strength / 2000
+		cached_gases[/datum/gas/oxygen][MOLES] -= pulse_strength / 1000
+		ASSERT_GAS(/datum/gas/pluoxium, air)
+		cached_gases[/datum/gas/pluoxium][MOLES] += pulse_strength / 4000
+		strength -= pulse_strength
 
+	if(cached_gases[/datum/gas/hydrogen])
+		gas_change = TRUE
+		var/pulse_strength = min(strength, cached_gases[/datum/gas/hydrogen][MOLES] * 1000)
+		cached_gases[/datum/gas/hydrogen][MOLES] -= pulse_strength / 1000
+		ASSERT_GAS(/datum/gas/tritium, air)
+		cached_gases[/datum/gas/tritium][MOLES] += pulse_strength / 1000
+		strength -= pulse_strength
+
+	if(gas_change)
+		air.garbage_collect()
+		air_update_turf(FALSE, FALSE)

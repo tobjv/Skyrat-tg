@@ -15,13 +15,20 @@ GLOBAL_LIST_INIT(freqtospan, list(
 	"[FREQ_SYNDICATE]" = "syndradio",
 	"[FREQ_CENTCOM]" = "centcomradio",
 	"[FREQ_FACTION]" = "suppradio", //SKYRAT EDIT ADDITIION - FACTION
+	"[FREQ_CYBERSUN]" = "syndradio", //SKYRAT EDIT ADDITION - MAPPING
+	"[FREQ_INTERDYNE]" = "syndradio", //SKYRAT EDIT ADDITION - MAPPING
+	"[FREQ_GUILD]" = "syndradio", //SKYRAT EDIT ADDITION - MAPPING
 	"[FREQ_CTF_RED]" = "redteamradio",
-	"[FREQ_CTF_BLUE]" = "blueteamradio"
+	"[FREQ_CTF_BLUE]" = "blueteamradio",
+	"[FREQ_CTF_GREEN]" = "greenteamradio",
+	"[FREQ_CTF_YELLOW]" = "yellowteamradio"
 	))
 
 /atom/movable/proc/say(message, bubble_type, list/spans = list(), sanitize = TRUE, datum/language/language = null, ignore_spam = FALSE, forced = null)
 	if(!can_speak())
 		return
+	if(sanitize)
+		message = trim(copytext_char(sanitize(message), 1, MAX_MESSAGE_LEN))
 	if(message == "" || !message)
 		return
 	spans |= speech_span
@@ -34,12 +41,11 @@ GLOBAL_LIST_INIT(freqtospan, list(
 
 /atom/movable/proc/can_speak()
 	//SHOULD_BE_PURE(TRUE)
-	return 1
+	return TRUE
 
 /atom/movable/proc/send_speech(message, range = 7, obj/source = src, bubble_type, list/spans, datum/language/message_language = null, list/message_mods = list())
 	var/rendered = compose_message(src, message_language, message, , spans, message_mods)
-	for(var/_AM in get_hearers_in_view(range, source))
-		var/atom/movable/AM = _AM
+	for(var/atom/movable/AM as anything in get_hearers_in_view(range, source))
 		AM.Hear(rendered, src, message_language, message, , spans, message_mods)
 
 /atom/movable/proc/compose_message(atom/movable/speaker, datum/language/message_language, raw_message, radio_freq, list/spans, list/message_mods = list(), face_name = FALSE)
@@ -59,10 +65,8 @@ GLOBAL_LIST_INIT(freqtospan, list(
 	var/endspanpart = "</span>"
 
 	//Message
-	//SKYRAT EDIT CHANGE - EMOTES
-	// var/messagepart = " <span class='message'>[lang_treat(speaker, message_language, raw_message, spans, message_mods)]</span></span>" - ORIGINAL
 	var/messagepart = " <span class='message'>[say_emphasis(lang_treat(speaker, message_language, raw_message, spans, message_mods))]</span></span>"
-	//SKYRAT EDIT END
+
 	var/languageicon = ""
 	var/datum/language/D = GLOB.language_datum_instances[message_language]
 	if(istype(D) && D.display_icon(src))
@@ -98,6 +102,22 @@ GLOBAL_LIST_INIT(freqtospan, list(
 
 	var/spanned = attach_spans(input, spans)
 	return "[say_mod(input, message_mods)], \"[spanned]\""
+
+/// Transforms the speech emphasis mods from [/atom/movable/proc/say_emphasis] into the appropriate HTML tags. Includes escaping.
+#define ENCODE_HTML_EMPHASIS(input, char, html, varname) \
+	var/static/regex/##varname = regex("(?<!\\\\)[char](.+?)(?<!\\\\)[char]", "g");\
+	input = varname.Replace_char(input, "<[html]>$1</[html]>")
+
+/// Scans the input sentence for speech emphasis modifiers, notably |italics|, +bold+, and _underline_ -mothblocks
+/atom/movable/proc/say_emphasis(input)
+	ENCODE_HTML_EMPHASIS(input, "\\|", "i", italics)
+	ENCODE_HTML_EMPHASIS(input, "\\+", "b", bold)
+	ENCODE_HTML_EMPHASIS(input, "_", "u", underline)
+	var/static/regex/remove_escape_backlashes = regex("\\\\(_|\\+|\\|)", "g") // Removes backslashes used to escape text modification.
+	input = remove_escape_backlashes.Replace_char(input, "$1")
+	return input
+
+#undef ENCODE_HTML_EMPHASIS
 
 /atom/movable/proc/lang_treat(atom/movable/speaker, datum/language/language, raw_message, list/spans, list/message_mods = list(), no_quote = FALSE)
 	if(has_language(language))
@@ -148,7 +168,7 @@ GLOBAL_LIST_INIT(freqtospan, list(
 	return "0"
 
 /atom/movable/proc/GetVoice()
-	return "[src]"	//Returns the atom's name, prepended with 'The' if it's not a proper noun
+	return "[src]" //Returns the atom's name, prepended with 'The' if it's not a proper noun
 
 /atom/movable/proc/IsVocal()
 	return 1

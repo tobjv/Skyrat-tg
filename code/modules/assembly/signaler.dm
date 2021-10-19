@@ -24,7 +24,7 @@
 	var/last_receive_signal_log
 
 /obj/item/assembly/signaler/suicide_act(mob/living/carbon/user)
-	user.visible_message("<span class='suicide'>[user] eats \the [src]! If it is signaled, [user.p_they()] will die!</span>")
+	user.visible_message(span_suicide("[user] eats \the [src]! If it is signaled, [user.p_they()] will die!"))
 	playsound(src, 'sound/items/eatfood.ogg', 50, TRUE)
 	moveToNullspace()
 	suicider = user.mind
@@ -36,17 +36,17 @@
 	if(!istype(user))
 		return
 	if(suicide_mob == REF(user))
-		user.visible_message("<span class='suicide'>[user]'s [src] receives a signal, killing [user.p_them()] instantly!</span>")
+		user.visible_message(span_suicide("[user]'s [src] receives a signal, killing [user.p_them()] instantly!"))
 	else
-		user.visible_message("<span class='suicide'>[user]'s [src] receives a signal and [user.p_they()] die[user.p_s()] like a gamer!</span>")
+		user.visible_message(span_suicide("[user]'s [src] receives a signal and [user.p_they()] die[user.p_s()] like a gamer!"))
+	user.set_suicide(TRUE)
 	user.adjustOxyLoss(200)//it sends an electrical pulse to their heart, killing them. or something.
 	user.death(0)
-	user.set_suicide(TRUE)
 	user.suicide_log()
 	playsound(user, 'sound/machines/triple_beep.ogg', ASSEMBLY_BEEP_VOLUME, TRUE)
 	qdel(src)
 
-/obj/item/assembly/signaler/Initialize()
+/obj/item/assembly/signaler/Initialize(mapload)
 	. = ..()
 	set_frequency(frequency)
 
@@ -61,10 +61,9 @@
 	signal()
 	return TRUE
 
-/obj/item/assembly/signaler/update_icon()
-	if(holder)
-		holder.update_icon()
-	return
+/obj/item/assembly/signaler/update_appearance()
+	. = ..()
+	holder?.update_appearance()
 
 /obj/item/assembly/signaler/ui_status(mob/user)
 	if(is_secured(user))
@@ -92,6 +91,10 @@
 
 	switch(action)
 		if("signal")
+			if(TIMER_COOLDOWN_CHECK(src, COOLDOWN_SIGNALLER_SEND))
+				to_chat(usr, span_warning("[src] is still recharging..."))
+				return
+			TIMER_COOLDOWN_START(src, COOLDOWN_SIGNALLER_SEND, 1 SECONDS)
 			INVOKE_ASYNC(src, .proc/signal)
 			. = TRUE
 		if("freq")
@@ -110,7 +113,7 @@
 				code = initial(code)
 			. = TRUE
 
-	update_icon()
+	update_appearance()
 
 /obj/item/assembly/signaler/attackby(obj/item/W, mob/user, params)
 	if(issignaler(W))
@@ -152,11 +155,9 @@
 	last_receive_signal_log = istype(holder, /obj/item/transfer_valve) ? signal.logging_data : null
 
 	pulse(TRUE)
-	audible_message("[icon2html(src, hearers(src))] *beep* *beep* *beep*", null, hearing_range)
-	for(var/CHM in get_hearers_in_view(hearing_range, src))
-		if(ismob(CHM))
-			var/mob/LM = CHM
-			LM.playsound_local(get_turf(src), 'sound/machines/triple_beep.ogg', ASSEMBLY_BEEP_VOLUME, TRUE)
+	audible_message("<span class='infoplain'>[icon2html(src, hearers(src))] *beep* *beep* *beep*</span>", null, hearing_range)
+	for(var/mob/hearing_mob in get_hearers_in_view(hearing_range, src))
+		hearing_mob.playsound_local(get_turf(src), 'sound/machines/triple_beep.ogg', ASSEMBLY_BEEP_VOLUME, TRUE)
 	return TRUE
 
 /obj/item/assembly/signaler/proc/set_frequency(new_frequency)
@@ -180,7 +181,7 @@
 
 /obj/item/assembly/signaler/receiver/examine(mob/user)
 	. = ..()
-	. += "<span class='notice'>The radio receiver is [on?"on":"off"].</span>"
+	. += span_notice("The radio receiver is [on?"on":"off"].")
 
 /obj/item/assembly/signaler/receiver/receive_signal(datum/signal/signal)
 	if(!on)
@@ -199,3 +200,21 @@
 	return
 /obj/item/assembly/signaler/cyborg/screwdriver_act(mob/living/user, obj/item/I)
 	return
+
+/obj/item/assembly/signaler/internal
+	name = "internal remote signaling device"
+
+/obj/item/assembly/signaler/internal/ui_state(mob/user)
+	return GLOB.inventory_state
+
+/obj/item/assembly/signaler/internal/attackby(obj/item/W, mob/user, params)
+	return
+
+/obj/item/assembly/signaler/internal/screwdriver_act(mob/living/user, obj/item/I)
+	return
+
+/obj/item/assembly/signaler/internal/can_interact(mob/user)
+	if(istype(user, /mob/living/silicon/pai))
+		return TRUE
+	. = ..()
+

@@ -1,15 +1,14 @@
 /obj/item/clothing/head/beret/blueshield
-	name = "blueshield's beret" //Thank you for helping me rework the armor values for all Blueshield items Trilby <3 -CinderWC
-	desc = "Granted to those under the prestigious rank of blueshield... or just fancy bodyguard. Protects your head quite well, being made of industrial durathread fibers."
-	icon = 'modular_skyrat/modules/blueshield/icons/obj/clothing/hats.dmi'
-	worn_icon = 'modular_skyrat/modules/blueshield/icons/mob/head.dmi'
+	name = "blueshield's beret"
+	desc = "A blue beret made of durathread with a genuine golden badge, denoting its owner as a Blueshield Lieuteneant. It seems to be padded with nano-kevlar, making it tougher than standard reinforced berets."
+	greyscale_config = /datum/greyscale_config/beret_badge
+	greyscale_config_worn = /datum/greyscale_config/beret_badge/worn
+	greyscale_colors = "#3A4E7D#DEB63D"
 	//alternate_worn_icon_digi = 'modular_skyrat/icons/mob/head_muzzled.dmi'
-	icon_state = "blueshield"
-	armor = list("melee" = 30, "bullet" = 20, "laser" = 20,"energy" = 10, "bomb" = 25, "bio" = 0, "rad" = 0, "fire" = 75, "acid" = 75)
+	icon_state = "beret_badge_police"
+	armor = list("melee" = 35, "bullet" = 25, "laser" = 25,"energy" = 15, "bomb" = 25, "bio" = 0, "rad" = 0, "fire" = 75, "acid" = 75)
 
 /obj/item/clothing/head/beret/blueshield/navy
 	name = "navy blueshield's beret"
-	icon = 'modular_skyrat/modules/blueshield/icons/obj/clothing/hats.dmi'
-	worn_icon = 'modular_skyrat/modules/blueshield/icons/mob/head.dmi'
-	//alternate_worn_icon_digi = 'modular_skyrat/icons/mob/head_muzzled.dmi'
-	icon_state = "blueshield_navy"
+	desc = "A navy-blue beret made of durathread with a silver badge, denoting its owner as a Blueshield Lieuteneant. It seems to be padded with nano-kevlar, making it tougher than standard reinforced berets."
+	greyscale_colors = "#3C485A#BBBBBB"

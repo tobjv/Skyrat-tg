@@ -3,22 +3,23 @@
 	generic = "Ears"
 	organ_type = /obj/item/organ/ears/mutant
 	relevent_layers = list(BODY_ADJ_LAYER, BODY_FRONT_LAYER)
+	genetic = TRUE
 
 /datum/sprite_accessory/ears/is_hidden(mob/living/carbon/human/H, obj/item/bodypart/HD)
-	if(H.head && (H.head.flags_inv & HIDEHAIR) || (H.wear_mask && (H.wear_mask.flags_inv & HIDEHAIR)) || !HD || HD.status == BODYPART_ROBOTIC)
+	if(H.head && (H.head.flags_inv & HIDEHAIR) || (H.wear_mask && (H.wear_mask.flags_inv & HIDEHAIR)) || !HD)
 		return TRUE
 	return FALSE
 
 
 /datum/sprite_accessory/ears/cat
-	recommended_species = list("mammal", "human", "felinid", "humanoid")
+	recommended_species = list(SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL, SPECIES_HUMAN, SPECIES_SYNTHHUMAN, SPECIES_FELINE, SPECIES_HUMANOID, SPECIES_GHOUL)
 	relevent_layers = list(BODY_BEHIND_LAYER, BODY_FRONT_LAYER)
 
 /datum/sprite_accessory/ears/mutant
-	icon = 'modular_skyrat/modules/customization/icons/mob/sprite_accessory/ears.dmi'
+	icon = 'modular_skyrat/master_files/icons/mob/sprite_accessory/ears.dmi'
 	organ_type = /obj/item/organ/ears/mutant
 	color_src = USE_MATRIXED_COLORS
-	recommended_species = list("mammal", "human", "felinid", "humanoid")
+	recommended_species = list(SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL, SPECIES_HUMAN, SPECIES_SYNTHHUMAN, SPECIES_FELINE, SPECIES_HUMANOID, SPECIES_GHOUL)
 
 /datum/sprite_accessory/ears/mutant/none
 	name = "None"
@@ -27,13 +28,13 @@
 	factual = FALSE
 
 /datum/sprite_accessory/ears/mutant/vulpkanin
-	recommended_species = list("mammal", "human", "felinid", "vulpkanin", "humanoid")
+	recommended_species = list(SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL, SPECIES_HUMAN, SPECIES_SYNTHHUMAN, SPECIES_FELINE, SPECIES_VULP, SPECIES_HUMANOID, SPECIES_GHOUL)
 
 /datum/sprite_accessory/ears/mutant/tajaran
-	recommended_species = list("mammal", "human", "felinid", "tajaran", "humanoid")
+	recommended_species = list(SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL, SPECIES_HUMAN, SPECIES_SYNTHHUMAN, SPECIES_FELINE, SPECIES_TAJARAN, SPECIES_HUMANOID, SPECIES_GHOUL)
 
 /datum/sprite_accessory/ears/mutant/akula
-	recommended_species = list("mammal", "human", "felinid", "aquatic", "akula", "humanoid")
+	recommended_species = list(SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL, SPECIES_HUMAN, SPECIES_SYNTHHUMAN, SPECIES_FELINE, SPECIES_AQUATIC, SPECIES_AKULA, SPECIES_HUMANOID, SPECIES_GHOUL)
 
 /datum/sprite_accessory/ears/mutant/axolotl
 	name = "Axolotl"
@@ -93,7 +94,7 @@
 	default_color = DEFAULT_TERTIARY
 
 /datum/sprite_accessory/ears/mutant/deer
-	name = "Deer"
+	name = "Deer (Antler)"
 	icon_state = "deer"
 	color_src = USE_ONE_COLOR
 	default_color = DEFAULT_TERTIARY
@@ -101,7 +102,11 @@
 /datum/sprite_accessory/ears/mutant/eevee
 	name = "Eevee"
 	icon_state = "eevee"
-	color_src = USE_ONE_COLOR
+
+/datum/sprite_accessory/ears/mutant/eevee_alt
+	name = "Eevee ALT"
+	icon_state = "eevee_alt"
+	color_src = USE_MATRIXED_COLORS
 
 /datum/sprite_accessory/ears/mutant/elf
 	name = "Elf"
@@ -152,6 +157,10 @@
 /datum/sprite_accessory/ears/mutant/vulpkanin/otie
 	name = "Otusian"
 	icon_state = "otie"
+
+/datum/sprite_accessory/ears/mutant/protogen
+	name = "Protogen"
+	icon_state = "protogen"
 
 /datum/sprite_accessory/ears/mutant/rabbit
 	name = "Rabbit"
@@ -216,3 +225,15 @@
 /datum/sprite_accessory/ears/mutant/miqote
 	name = "Miqo'te"
 	icon_state = "miqote"
+
+/datum/sprite_accessory/ears/mutant/hare
+	name = "Hare"
+	icon_state = "rabbitalt"
+
+/datum/sprite_accessory/ears/mutant/bunnyalt
+	name = "Curved Rabbit Ears"
+	icon_state = "bunnyalt"
+
+/datum/sprite_accessory/ears/mutant/deerear
+	name = "Deer (ear)"
+	icon_state = "deerear"

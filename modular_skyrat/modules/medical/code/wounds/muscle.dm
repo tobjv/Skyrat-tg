@@ -65,7 +65,7 @@
 /datum/wound/muscle/proc/attack_with_hurt_hand(mob/M, atom/target, proximity)
 	SIGNAL_HANDLER
 
-	if(victim.get_active_hand() != limb || victim.a_intent == INTENT_HELP || !ismob(target) || severity <= WOUND_SEVERITY_MODERATE)
+	if(victim.get_active_hand() != limb || !victim.combat_mode || !ismob(target) || severity <= WOUND_SEVERITY_MODERATE)
 		return
 
 	// 15% of 30% chance to proc pain on hit
@@ -111,6 +111,7 @@
 */
 
 /datum/wound/muscle/proc/update_inefficiencies()
+	SIGNAL_HANDLER
 	if(limb.body_zone in list(BODY_ZONE_L_LEG, BODY_ZONE_R_LEG))
 		if(limb.current_splint)
 			limp_slowdown = initial(limp_slowdown) * limb.current_splint.splint_factor

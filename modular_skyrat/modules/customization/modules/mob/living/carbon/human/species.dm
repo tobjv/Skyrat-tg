@@ -1,3 +1,5 @@
+GLOBAL_LIST_EMPTY(customizable_races)
+
 /datum/species
 	mutant_bodyparts = list()
 	///Self explanatory
@@ -12,8 +14,16 @@
 	var/reagent_flags = PROCESS_ORGANIC
 	///Whether a species can use augmentations in preferences
 	var/can_augment = TRUE
+	///Override for the alpha of bodyparts and mutant parts.
+	var/specific_alpha = 255
+	///Override for alpha value of markings, should be much lower than the above value.
+	var/markings_alpha = 255
+	///If a species can always be picked in prefs for the purposes of customizing it for ghost roles or events
+	var/always_customizable = FALSE
+	///Flavor text of the species displayed on character creation screeen
+	var/flavor_text = "No description."
 
-/datum/species/proc/handle_mutant_bodyparts(mob/living/carbon/human/H, forced_colour)
+/datum/species/proc/handle_mutant_bodyparts(mob/living/carbon/human/H, forced_colour, force_update = FALSE)
 	var/list/standing	= list()
 
 	var/obj/item/bodypart/head/HD = H.get_bodypart(BODY_ZONE_HEAD)
@@ -52,6 +62,8 @@
 	var/new_renderkey = "[id]"
 
 	for(var/key in mutant_bodyparts)
+		if (!islist(mutant_bodyparts[key]))
+			continue
 		var/datum/sprite_accessory/S = GLOB.sprite_accessories[key][mutant_bodyparts[key][MUTANT_INDEX_NAME]]
 		if(!S || S.icon_state == "none")
 			continue
@@ -65,7 +77,7 @@
 		new_renderkey += "-[key]-[render_state]"
 		bodyparts_to_add[S] = render_state
 
-	if(new_renderkey == H.mutant_renderkey)
+	if(new_renderkey == H.mutant_renderkey && !force_update)
 		return
 	H.mutant_renderkey = new_renderkey
 
@@ -122,33 +134,34 @@
 				else
 					switch(S.color_src)
 						if(USE_ONE_COLOR)
-							accessory_overlay.color = "#"+mutant_bodyparts[key][MUTANT_INDEX_COLOR_LIST][1]
+							accessory_overlay.color = mutant_bodyparts[key][MUTANT_INDEX_COLOR_LIST][1]
 						if(USE_MATRIXED_COLORS)
 							var/list/color_list = mutant_bodyparts[key][MUTANT_INDEX_COLOR_LIST]
+							var/alpha_value = specific_alpha //this is here and not with the alpha setting code below as setting the alpha on a matrix color mutable appearance breaks it (at least in this case)
 							var/list/finished_list = list()
-							finished_list += ReadRGB("[color_list[1]]0")
-							finished_list += ReadRGB("[color_list[2]]0")
-							finished_list += ReadRGB("[color_list[3]]0")
-							finished_list += list(0,0,0,255)
+							finished_list += ReadRGB("[get_alpha_padded_color(color_list[1])]")
+							finished_list += ReadRGB("[get_alpha_padded_color(color_list[2])]")
+							finished_list += ReadRGB("[get_alpha_padded_color(color_list[3])]")
+							finished_list += list(0,0,0,alpha_value)
 							for(var/index in 1 to finished_list.len)
 								finished_list[index] /= 255
 							accessory_overlay.color = finished_list
 						if(MUTCOLORS)
 							if(fixed_mut_color)
-								accessory_overlay.color = "#[fixed_mut_color]"
+								accessory_overlay.color = fixed_mut_color
 							else
-								accessory_overlay.color = "#[H.dna.features["mcolor"]]"
+								accessory_overlay.color = H.dna.features["mcolor"]
 						if(HAIR)
 							if(hair_color == "mutcolor")
-								accessory_overlay.color = "#[H.dna.features["mcolor"]]"
+								accessory_overlay.color = H.dna.features["mcolor"]
 							else if(hair_color == "fixedmutcolor")
-								accessory_overlay.color = "#[fixed_mut_color]"
+								accessory_overlay.color = fixed_mut_color
 							else
-								accessory_overlay.color = "#[H.hair_color]"
+								accessory_overlay.color = H.hair_color
 						if(FACEHAIR)
-							accessory_overlay.color = "#[H.facial_hair_color]"
+							accessory_overlay.color = H.facial_hair_color
 						if(EYECOLOR)
-							accessory_overlay.color = "#[H.eye_color]"
+							accessory_overlay.color = H.eye_color
 			else
 				accessory_overlay.color = override_color
 			standing += accessory_overlay
@@ -179,22 +192,22 @@
 				switch(S.extra_color_src) //change the color of the extra overlay
 					if(MUTCOLORS)
 						if(fixed_mut_color)
-							extra_accessory_overlay.color = "#[fixed_mut_color]"
+							extra_accessory_overlay.color = fixed_mut_color
 						else
-							extra_accessory_overlay.color = "#[H.dna.features["mcolor"]]"
+							extra_accessory_overlay.color = H.dna.features["mcolor"]
 					if(MUTCOLORS2)
-						extra_accessory_overlay.color = "#[H.dna.features["mcolor2"]]"
+						extra_accessory_overlay.color = H.dna.features["mcolor2"]
 					if(MUTCOLORS3)
-						extra_accessory_overlay.color = "#[H.dna.features["mcolor3"]]"
+						extra_accessory_overlay.color = H.dna.features["mcolor3"]
 					if(HAIR)
 						if(hair_color == "mutcolor")
-							extra_accessory_overlay.color = "#[H.dna.features["mcolor3"]]"
+							extra_accessory_overlay.color = H.dna.features["mcolor3"]
 						else
-							extra_accessory_overlay.color = "#[H.hair_color]"
+							extra_accessory_overlay.color = H.hair_color
 					if(FACEHAIR)
-						extra_accessory_overlay.color = "#[H.facial_hair_color]"
+						extra_accessory_overlay.color = H.facial_hair_color
 					if(EYECOLOR)
-						extra_accessory_overlay.color = "#[H.eye_color]"
+						extra_accessory_overlay.color = H.eye_color
 
 				standing += extra_accessory_overlay
 
@@ -210,20 +223,25 @@
 				switch(S.extra2_color_src) //change the color of the extra overlay
 					if(MUTCOLORS)
 						if(fixed_mut_color)
-							extra2_accessory_overlay.color = "#[fixed_mut_color]"
+							extra2_accessory_overlay.color = fixed_mut_color
 						else
-							extra2_accessory_overlay.color = "#[H.dna.features["mcolor"]]"
+							extra2_accessory_overlay.color = H.dna.features["mcolor"]
 					if(MUTCOLORS2)
-						extra2_accessory_overlay.color = "#[H.dna.features["mcolor2"]]"
+						extra2_accessory_overlay.color = H.dna.features["mcolor2"]
 					if(MUTCOLORS3)
-						extra2_accessory_overlay.color = "#[H.dna.features["mcolor3"]]"
+						extra2_accessory_overlay.color = H.dna.features["mcolor3"]
 					if(HAIR)
 						if(hair_color == "mutcolor3")
-							extra2_accessory_overlay.color = "#[H.dna.features["mcolor"]]"
+							extra2_accessory_overlay.color = H.dna.features["mcolor"]
 						else
-							extra2_accessory_overlay.color = "#[H.hair_color]"
+							extra2_accessory_overlay.color = H.hair_color
 
 				standing += extra2_accessory_overlay
+			if (specific_alpha != 255 && !override_color)
+				for (var/ov in standing)
+					var/image/overlay = ov
+					if (!istype(overlay.color,/list)) //check for a list because setting the alpha of the matrix colors breaks the color (the matrix alpha is set above inside the matrix)
+						overlay.alpha = specific_alpha
 
 			H.overlays_standing[layer] += standing
 			standing = list()
@@ -235,6 +253,8 @@
 /datum/species
 	///What accessories can a species have aswell as their default accessory of such type e.g. "frills" = "Aquatic". Default accessory colors is dictated by the accessory properties and mutcolors of the specie
 	var/list/default_mutant_bodyparts = list()
+	/// List of all the languages our species can learn NO MATTER their background
+	var/list/learnable_languages = list(/datum/language/common)
 
 /datum/species/New()
 	. = ..()
@@ -243,6 +263,7 @@
 		default_mutant_bodyparts["womb"] = "None"
 		default_mutant_bodyparts["testicles"] = "None"
 		default_mutant_bodyparts["breasts"] = "None"
+		default_mutant_bodyparts["anus"] = "None"
 		default_mutant_bodyparts["penis"] = "None"
 
 /datum/species/dullahan
@@ -251,6 +272,7 @@
 /datum/species/human/felinid
 	mutant_bodyparts = list()
 	default_mutant_bodyparts = list("tail" = "Cat", "ears" = "Cat")
+	learnable_languages = list(/datum/language/common, /datum/language/nekomimetic)
 
 /datum/species/human/monkey
 	mutant_bodyparts = list()
@@ -259,6 +281,7 @@
 /datum/species/human
 	mutant_bodyparts = list()
 	default_mutant_bodyparts = list("ears" = "None", "tail" = "None", "wings" = "None")
+	learnable_languages = list(/datum/language/common, /datum/language/uncommon)
 
 /datum/species/mush
 	mutant_bodyparts = list()
@@ -270,11 +293,18 @@
 	mutant_bodyparts = list()
 	can_have_genitals = FALSE
 	can_augment = FALSE
+	learnable_languages = list(/datum/language/common, /datum/language/calcic)
 
 /datum/species/ethereal
 	mutant_bodyparts = list()
 	can_have_genitals = FALSE
 	can_augment = FALSE
+	learnable_languages = list(/datum/language/common, /datum/language/voltaic)
+
+/datum/species/pod
+	name = "Primal Podperson"
+	always_customizable = TRUE
+	learnable_languages = list(/datum/language/common, /datum/language/sylvan)
 
 /datum/species/proc/get_random_features()
 	var/list/returned = MANDATORY_FEATURE_LIST
@@ -305,7 +335,7 @@
 /datum/species/proc/get_random_body_markings(list/features) //Needs features to base the colour off of
 	return list()
 
-/datum/species/proc/on_species_gain(mob/living/carbon/C, datum/species/old_species, pref_load)
+/datum/species/proc/on_species_gain(mob/living/carbon/C, datum/species/old_species)
 	// Drop the items the new species can't wear
 	if((AGENDER in species_traits))
 		C.gender = PLURAL
@@ -313,8 +343,11 @@
 		var/obj/item/thing = C.get_item_by_slot(slot_id)
 		if(thing && (!thing.species_exception || !is_type_in_list(src,thing.species_exception)))
 			C.dropItemToGround(thing)
+
 	if(C.hud_used)
 		C.hud_used.update_locked_slots()
+
+	fix_non_native_limbs(C)
 
 	// this needs to be FIRST because qdel calls update_body which checks if we have DIGITIGRADE legs or not and if not then removes DIGITIGRADE from species_traits
 	if(C.dna.species.mutant_bodyparts["legs"] && C.dna.species.mutant_bodyparts["legs"][MUTANT_INDEX_NAME] == "Digitigrade Legs")
@@ -342,7 +375,7 @@
 			if(istype(I))
 				C.dropItemToGround(I)
 			else	//Entries in the list should only ever be items or null, so if it's not an item, we can assume it's an empty hand
-				C.put_in_hands(new mutanthands())
+				INVOKE_ASYNC(C, /mob/living/carbon.proc/put_in_hands, new mutanthands())
 
 	for(var/X in inherent_traits)
 		ADD_TRAIT(C, X, SPECIES_TRAIT)
@@ -375,6 +408,7 @@
 	if(ROBOTIC_LIMBS in species_traits)
 		robotic_limbs = TRUE
 	for(var/obj/item/bodypart/B in C.bodyparts)
+		B.alpha = specific_alpha
 		if(robotic_limbs)
 			B.change_bodypart_status(BODYPART_ROBOTIC, FALSE, TRUE)
 			B.organic_render = TRUE
@@ -385,26 +419,26 @@
 
 	SEND_SIGNAL(C, COMSIG_SPECIES_GAIN, src, old_species)
 
-/datum/species/proc/handle_body(mob/living/carbon/human/H)
-	H.remove_overlay(BODY_LAYER)
+/datum/species/proc/handle_body(mob/living/carbon/human/species_human)
+	species_human.remove_overlay(BODY_LAYER)
 
 	var/list/standing = list()
 
-	var/obj/item/bodypart/head/HD = H.get_bodypart(BODY_ZONE_HEAD)
+	var/obj/item/bodypart/head/HD = species_human.get_bodypart(BODY_ZONE_HEAD)
 
-	if(HD && !(HAS_TRAIT(H, TRAIT_HUSK)))
+	if(HD && !(HAS_TRAIT(species_human, TRAIT_HUSK)))
 		// lipstick
-		if(H.lip_style && (LIPS in species_traits))
-			var/mutable_appearance/lip_overlay = mutable_appearance('icons/mob/human_face.dmi', "lips_[H.lip_style]", -BODY_LAYER)
-			lip_overlay.color = H.lip_color
-			if(OFFSET_FACE in H.dna.species.offset_features)
-				lip_overlay.pixel_x += H.dna.species.offset_features[OFFSET_FACE][1]
-				lip_overlay.pixel_y += H.dna.species.offset_features[OFFSET_FACE][2]
+		if(species_human.lip_style && (LIPS in species_traits))
+			var/mutable_appearance/lip_overlay = mutable_appearance('icons/mob/human_face.dmi', "lips_[species_human.lip_style]", -BODY_LAYER)
+			lip_overlay.color = species_human.lip_color
+			if(OFFSET_FACE in species_human.dna.species.offset_features)
+				lip_overlay.pixel_x += species_human.dna.species.offset_features[OFFSET_FACE][1]
+				lip_overlay.pixel_y += species_human.dna.species.offset_features[OFFSET_FACE][2]
 			standing += lip_overlay
 
 		// eyes
 		if(!(NOEYESPRITES in species_traits))
-			var/obj/item/organ/eyes/E = H.getorganslot(ORGAN_SLOT_EYES)
+			var/obj/item/organ/eyes/E = species_human.getorganslot(ORGAN_SLOT_EYES)
 			var/mutable_appearance/eye_overlay
 			var/eye_icon = eyes_icon || 'icons/mob/human_face.dmi'
 			if(!E)
@@ -412,16 +446,16 @@
 			else
 				eye_overlay = mutable_appearance(eye_icon, E.eye_icon_state, -BODY_LAYER)
 			if((EYECOLOR in species_traits) && E)
-				eye_overlay.color = "#" + H.eye_color
-			if(OFFSET_FACE in H.dna.species.offset_features)
-				eye_overlay.pixel_x += H.dna.species.offset_features[OFFSET_FACE][1]
-				eye_overlay.pixel_y += H.dna.species.offset_features[OFFSET_FACE][2]
+				eye_overlay.color = species_human.eye_color
+			if(OFFSET_FACE in species_human.dna.species.offset_features)
+				eye_overlay.pixel_x += species_human.dna.species.offset_features[OFFSET_FACE][1]
+				eye_overlay.pixel_y += species_human.dna.species.offset_features[OFFSET_FACE][2]
 			standing += eye_overlay
 
 	//Underwear, Undershirts & Socks
 	if(!(NO_UNDERWEAR in species_traits))
-		if(H.underwear && !(H.underwear_visibility & UNDERWEAR_HIDE_UNDIES))
-			var/datum/sprite_accessory/underwear/underwear = GLOB.underwear_list[H.underwear]
+		if(species_human.underwear && !(species_human.underwear_visibility & UNDERWEAR_HIDE_UNDIES))
+			var/datum/sprite_accessory/underwear/underwear = GLOB.underwear_list[species_human.underwear]
 			var/mutable_appearance/underwear_overlay
 			if(underwear)
 				var/icon_state = underwear.icon_state
@@ -429,23 +463,23 @@
 					icon_state += "_d"
 				underwear_overlay = mutable_appearance(underwear.icon, icon_state, -BODY_LAYER)
 				if(!underwear.use_static)
-					underwear_overlay.color = "#" + H.underwear_color
+					underwear_overlay.color = species_human.underwear_color
 				standing += underwear_overlay
 
-		if(H.undershirt && !(H.underwear_visibility & UNDERWEAR_HIDE_SHIRT))
-			var/datum/sprite_accessory/undershirt/undershirt = GLOB.undershirt_list[H.undershirt]
+		if(species_human.undershirt && !(species_human.underwear_visibility & UNDERWEAR_HIDE_SHIRT))
+			var/datum/sprite_accessory/undershirt/undershirt = GLOB.undershirt_list[species_human.undershirt]
 			if(undershirt)
 				var/mutable_appearance/undershirt_overlay
-				if(H.dna.species.sexes && H.gender == FEMALE)
+				if(species_human.dna.species.sexes && species_human.gender == FEMALE)
 					undershirt_overlay = wear_female_version(undershirt.icon_state, undershirt.icon, BODY_LAYER)
 				else
 					undershirt_overlay = mutable_appearance(undershirt.icon, undershirt.icon_state, -BODY_LAYER)
 				if(!undershirt.use_static)
-					undershirt_overlay.color = "#" + H.undershirt_color
+					undershirt_overlay.color = species_human.undershirt_color
 				standing += undershirt_overlay
 
-		if(H.socks && H.num_legs >= 2 && !(mutant_bodyparts["taur"]) && !(H.underwear_visibility & UNDERWEAR_HIDE_SOCKS))
-			var/datum/sprite_accessory/socks/socks = GLOB.socks_list[H.socks]
+		if(species_human.socks && species_human.num_legs >= 2 && !(mutant_bodyparts["taur"]) && !(species_human.underwear_visibility & UNDERWEAR_HIDE_SOCKS))
+			var/datum/sprite_accessory/socks/socks = GLOB.socks_list[species_human.socks]
 			if(socks)
 				var/mutable_appearance/socks_overlay
 				var/icon_state = socks.icon_state
@@ -453,14 +487,14 @@
 					icon_state += "_d"
 				socks_overlay = mutable_appearance(socks.icon, icon_state, -BODY_LAYER)
 				if(!socks.use_static)
-					socks_overlay.color = "#" + H.socks_color
+					socks_overlay.color = species_human.socks_color
 				standing += socks_overlay
 
 	if(standing.len)
-		H.overlays_standing[BODY_LAYER] = standing
+		species_human.overlays_standing[BODY_LAYER] = standing
 
-	H.apply_overlay(BODY_LAYER)
-	handle_mutant_bodyparts(H)
+	species_human.apply_overlay(BODY_LAYER)
+	handle_mutant_bodyparts(species_human)
 
 //I wag in death
 /datum/species/spec_death(gibbed, mob/living/carbon/human/H)
@@ -516,8 +550,10 @@
 	. = ..()
 	var/robot_organs = (ROBOTIC_DNA_ORGANS in C.dna.species.species_traits)
 	for(var/key in C.dna.mutant_bodyparts)
+		if (!islist(C.dna.mutant_bodyparts[key]))
+			continue
 		var/datum/sprite_accessory/SA = GLOB.sprite_accessories[key][C.dna.mutant_bodyparts[key][MUTANT_INDEX_NAME]]
-		if(SA.factual && SA.organ_type)
+		if(SA?.factual && SA.organ_type)
 			var/obj/item/organ/path = new SA.organ_type
 			if(robot_organs)
 				path.status = ORGAN_ROBOTIC
@@ -537,3 +573,28 @@
 
 /datum/species/proc/spec_revival(mob/living/carbon/human/H)
 	return
+
+/// Gets a list of all customizable races on roundstart.
+/proc/get_customizable_races()
+	RETURN_TYPE(/list)
+
+	if (!GLOB.customizable_races.len)
+		GLOB.customizable_races = generate_customizable_races()
+
+	return GLOB.customizable_races
+
+/**
+ * Generates races available to choose in character setup at roundstart, yet not playable on the station.
+ *
+ * This proc generates which species are available to pick from in character setup.
+ */
+/proc/generate_customizable_races()
+	var/list/customizable_races = list()
+
+	for(var/species_type in subtypesof(/datum/species))
+		var/datum/species/species = new species_type
+		if(species.always_customizable)
+			customizable_races += species.id
+			qdel(species)
+
+	return customizable_races

@@ -1,4 +1,4 @@
-/// Called on [/mob/living/Initialize()], for the mob to register to relevant signals.
+/// Called on [/mob/living/Initialize(mapload)], for the mob to register to relevant signals.
 /mob/living/proc/register_init_signals()
 	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_KNOCKEDOUT), .proc/on_knockedout_trait_gain)
 	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_KNOCKEDOUT), .proc/on_knockedout_trait_loss)
@@ -40,6 +40,9 @@
 
 	RegisterSignal(src, COMSIG_MOVETYPE_FLAG_ENABLED, .proc/on_movement_type_flag_enabled)
 	RegisterSignal(src, COMSIG_MOVETYPE_FLAG_DISABLED, .proc/on_movement_type_flag_disabled)
+
+	RegisterSignal(src, SIGNAL_ADDTRAIT(TRAIT_SKITTISH), .proc/on_skittish_trait_gain)
+	RegisterSignal(src, SIGNAL_REMOVETRAIT(TRAIT_SKITTISH), .proc/on_skittish_trait_loss)
 
 /// Called when [TRAIT_KNOCKEDOUT] is added to the mob.
 /mob/living/proc/on_knockedout_trait_gain(datum/source)
@@ -97,11 +100,15 @@
 
 /// Called when [TRAIT_FORCED_STANDING] is added to the mob.
 /mob/living/proc/on_forced_standing_trait_gain(datum/source)
+	SIGNAL_HANDLER
+
 	set_body_position(STANDING_UP)
 	set_lying_angle(0)
 
 /// Called when [TRAIT_FORCED_STANDING] is removed from the mob.
 /mob/living/proc/on_forced_standing_trait_loss(datum/source)
+	SIGNAL_HANDLER
+
 	if(resting || HAS_TRAIT(src, TRAIT_FLOORED))
 		set_lying_down()
 
@@ -150,14 +157,14 @@
 	SIGNAL_HANDLER
 	ADD_TRAIT(src, TRAIT_UI_BLOCKED, TRAIT_INCAPACITATED)
 	ADD_TRAIT(src, TRAIT_PULL_BLOCKED, TRAIT_INCAPACITATED)
-	update_icon()
+	update_appearance()
 
 /// Called when [TRAIT_INCAPACITATED] is removed from the mob.
 /mob/living/proc/on_incapacitated_trait_loss(datum/source)
 	SIGNAL_HANDLER
 	REMOVE_TRAIT(src, TRAIT_UI_BLOCKED, TRAIT_INCAPACITATED)
 	REMOVE_TRAIT(src, TRAIT_PULL_BLOCKED, TRAIT_INCAPACITATED)
-	update_icon()
+	update_appearance()
 
 
 /// Called when [TRAIT_RESTRAINED] is added to the mob.
@@ -184,11 +191,22 @@
 		clear_alert("succumb")
 
 ///From [element/movetype_handler/on_movement_type_trait_gain()]
-/mob/living/proc/on_movement_type_flag_enabled(datum/source, trait)
+/mob/living/proc/on_movement_type_flag_enabled(datum/source, flag, old_movement_type)
 	SIGNAL_HANDLER
 	update_movespeed(FALSE)
 
 ///From [element/movetype_handler/on_movement_type_trait_loss()]
-/mob/living/proc/on_movement_type_flag_disabled(datum/source, trait)
+/mob/living/proc/on_movement_type_flag_disabled(datum/source, flag, old_movement_type)
 	SIGNAL_HANDLER
 	update_movespeed(FALSE)
+
+
+/// Called when [TRAIT_SKITTISH] is added to the mob.
+/mob/living/proc/on_skittish_trait_gain(datum/source)
+	SIGNAL_HANDLER
+	AddElement(/datum/element/skittish)
+
+/// Called when [TRAIT_SKITTISH] is removed from the mob.
+/mob/living/proc/on_skittish_trait_loss(datum/source)
+	SIGNAL_HANDLER
+	RemoveElement(/datum/element/skittish)

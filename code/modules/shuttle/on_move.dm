@@ -31,7 +31,7 @@ All ShuttleMove procs go here
 				if(M.pulledby)
 					M.pulledby.stop_pulling()
 				M.stop_pulling()
-				M.visible_message("<span class='warning'>[shuttle] slams into [M]!</span>")
+				M.visible_message(span_warning("[shuttle] slams into [M]!"))
 				SSblackbox.record_feedback("tally", "shuttle_gib", 1, M.type)
 				log_attack("[key_name(M)] was shuttle gibbed by [shuttle].")
 				M.gib()
@@ -55,15 +55,31 @@ All ShuttleMove procs go here
 	if(!shuttle_boundary)
 		CRASH("A turf queued to move via shuttle somehow had no skipover in baseturfs. [src]([type]):[loc]")
 	var/depth = baseturfs.len - shuttle_boundary + 1
+
+	//SKYRAT EDIT ADDITION
+	if(newT.lgroup)
+		newT.lgroup.remove_from_group(newT)
+	if(newT.liquids)
+		if(newT.liquids.immutable)
+			newT.liquids.remove_turf(src)
+		else
+			qdel(newT.liquids, TRUE)
+
+	if(lgroup)
+		lgroup.remove_from_group(src)
+	if(liquids)
+		liquids.ChangeToNewTurf(newT)
+		newT.reasses_liquids()
+	//SKYRAT EDIT END
 	newT.CopyOnTop(src, 1, depth, TRUE)
-	//Air stuff
 	newT.blocks_air = TRUE
-	newT.air_update_turf(TRUE)
+	newT.air_update_turf(TRUE, FALSE)
 	blocks_air = TRUE
-	air_update_turf(TRUE)
+	air_update_turf(TRUE, TRUE)
 	if(isopenturf(newT))
 		var/turf/open/new_open = newT
 		new_open.copy_air_with_tile(src)
+	SEND_SIGNAL(src, COMSIG_TURF_ON_SHUTTLE_MOVE, newT)
 
 	return TRUE
 
@@ -84,9 +100,9 @@ All ShuttleMove procs go here
 
 /turf/proc/lateShuttleMove(turf/oldT)
 	blocks_air = initial(blocks_air)
-	air_update_turf(TRUE)
+	air_update_turf(TRUE, blocks_air)
 	oldT.blocks_air = initial(oldT.blocks_air)
-	oldT.air_update_turf(TRUE)
+	oldT.air_update_turf(TRUE, oldT.blocks_air)
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -105,17 +121,15 @@ All ShuttleMove procs go here
 	if(loc != oldT) // This is for multi tile objects
 		return
 
-	loc = newT
-
+	abstract_move(newT)
 
 	return TRUE
 
 // Called on atoms after everything has been moved
 /atom/movable/proc/afterShuttleMove(turf/oldT, list/movement_force, shuttle_dir, shuttle_preferred_direction, move_dir, rotation)
-
 	var/turf/newT = get_turf(src)
 	if (newT.z != oldT.z)
-		onTransitZ(oldT.z, newT.z)
+		on_changed_z_level(oldT, newT)
 
 	if(light)
 		update_light()
@@ -245,21 +259,21 @@ All ShuttleMove procs go here
 					break
 
 			if(!connected)
-				nullifyNode(i)
+				nullify_node(i)
 
 		if(!nodes[i])
 			missing_nodes = TRUE
 
 	if(missing_nodes)
-		atmosinit()
+		atmos_init()
 		for(var/obj/machinery/atmospherics/A in pipeline_expansion())
-			A.atmosinit()
-			if(A.returnPipenet())
-				A.addMember(src)
+			A.atmos_init()
+			if(A.return_pipenet())
+				A.add_member(src)
 		SSair.add_to_rebuild_queue(src)
 	else
-		// atmosinit() calls update_icon(), so we don't need to call it
-		update_icon()
+		// atmos_init() calls update_appearance(), so we don't need to call it
+		update_appearance()
 
 /obj/machinery/navbeacon/beforeShuttleMove(turf/newT, rotation, move_mode, obj/docking_port/mobile/moving_dock)
 	. = ..()
@@ -363,9 +377,6 @@ All ShuttleMove procs go here
 
 /************************************Misc move procs************************************/
 
-/atom/movable/lighting_object/onShuttleMove()
-	return FALSE
-
 /obj/docking_port/mobile/beforeShuttleMove(turf/newT, rotation, move_mode, obj/docking_port/mobile/moving_dock)
 	. = ..()
 	if(moving_dock == src)
@@ -386,7 +397,7 @@ All ShuttleMove procs go here
 	if(loc != oldT) // This is for multi tile objects
 		return
 
-	loc = newT
+	abstract_move(newT)
 
 	return TRUE
 

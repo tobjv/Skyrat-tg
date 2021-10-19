@@ -13,8 +13,11 @@ GLOBAL_LIST_EMPTY(active_alternate_appearances)
 		return
 	if(alternate_appearances && alternate_appearances[key])
 		return
+	if(!ispath(type, /datum/atom_hud/alternate_appearance))
+		CRASH("Invalid type passed in: [type]")
+
 	var/list/arguments = args.Copy(2)
-	new type(arglist(arguments))
+	return new type(arglist(arguments))
 
 /datum/atom_hud/alternate_appearance
 	var/appearance_key
@@ -104,7 +107,7 @@ GLOBAL_LIST_EMPTY(active_alternate_appearances)
 			add_hud_to(mob)
 
 /datum/atom_hud/alternate_appearance/basic/everyone/mobShouldSee(mob/M)
-	return !isobserver(M)
+	return !isdead(M)
 
 /datum/atom_hud/alternate_appearance/basic/silicons
 
@@ -140,7 +143,7 @@ GLOBAL_LIST_EMPTY(active_alternate_appearances)
 			add_hud_to(mob)
 
 /datum/atom_hud/alternate_appearance/basic/noncult/mobShouldSee(mob/M)
-	if(!iscultist(M))
+	if(!IS_CULTIST(M))
 		return TRUE
 	return FALSE
 
@@ -153,7 +156,7 @@ GLOBAL_LIST_EMPTY(active_alternate_appearances)
 			add_hud_to(mob)
 
 /datum/atom_hud/alternate_appearance/basic/cult/mobShouldSee(mob/M)
-	if(iscultist(M))
+	if(IS_CULTIST(M))
 		return TRUE
 	return FALSE
 
@@ -166,11 +169,11 @@ GLOBAL_LIST_EMPTY(active_alternate_appearances)
 			add_hud_to(mob)
 
 /datum/atom_hud/alternate_appearance/basic/blessed_aware/mobShouldSee(mob/M)
-	if(M.mind && (M.mind.assigned_role == "Chaplain"))
+	if(M.mind?.holy_role)
 		return TRUE
 	if (istype(M, /mob/living/simple_animal/hostile/construct/wraith))
 		return TRUE
-	if(isrevenant(M) || iswizard(M))
+	if(isrevenant(M) || IS_WIZARD(M))
 		return TRUE
 	return FALSE
 
@@ -187,15 +190,5 @@ GLOBAL_LIST_EMPTY(active_alternate_appearances)
 	seer = M
 	add_hud_to(seer)
 
-/datum/atom_hud/alternate_appearance/basic/heretics
-	add_ghost_version = FALSE //just in case, to prevent infinite loops
 
-/datum/atom_hud/alternate_appearance/basic/heretics/New()
-	..()
-	for(var/mob in  GLOB.player_list)
-		if(mobShouldSee(mob))
-			add_hud_to(mob)
-
-/datum/atom_hud/alternate_appearance/basic/heretics/mobShouldSee(mob/M)
-	return IS_HERETIC(M) || IS_HERETIC_MONSTER(M)
-
+/datum/atom_hud/alternate_appearance/basic/food_demands

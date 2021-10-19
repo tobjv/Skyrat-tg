@@ -92,11 +92,11 @@
 	C.user = user
 	C.next = null
 	if(deep_copy)
-		C.data = deepCopyList(data)
+		C.data = deep_copy_list(data)
 	else
 		C.data = data
 	return C
-	
+
 
 /datum/netdata/proc/json_to_data(json)
 	data = json_decode(json)
@@ -107,7 +107,7 @@
 /datum/netdata/proc/data_to_json()
 	return json_encode(data)
 
-/datum/netdata/proc/json_list_generation_admin()	//for admin logs and such.
+/datum/netdata/proc/json_list_generation_admin() //for admin logs and such.
 	. = list()
 	. |= json_list_generation()
 

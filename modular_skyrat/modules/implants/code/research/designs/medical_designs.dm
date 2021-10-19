@@ -74,3 +74,25 @@
 	build_path = /obj/item/organ/cyberimp/chest/scanner
 	category = list("Misc", "Medical Designs")
 	departmental_flags = DEPARTMENTAL_FLAG_MEDICAL
+
+/datum/design/cyberimp_janitor
+	name = "Janitor Arm Implant"
+	desc = "A set of janitor tools fitted into an arm implant, designed to be installed on subject's arm."
+	id = "ci-janitor"
+	build_type = PROTOLATHE | MECHFAB
+	materials = list (/datum/material/iron = 3500, /datum/material/glass = 1500, /datum/material/silver = 1500)
+	construction_time = 200
+	build_path = /obj/item/organ/cyberimp/arm/janitor
+	category = list("Misc", "Medical Designs")
+	departmental_flags = DEPARTMENTAL_FLAG_MEDICAL | DEPARTMENTAL_FLAG_SERVICE
+
+/datum/design/cyberimp_lighter
+	name = "Lighter Arm Implant"
+	desc = "A lighter, installed into the subject's arm. Incredibly useless."
+	id = "ci-lighter"
+	build_type = PROTOLATHE | MECHFAB
+	materials = list (/datum/material/iron = 500, /datum/material/glass = 500, /datum/material/silver = 500)
+	construction_time = 100
+	build_path = /obj/item/organ/cyberimp/arm/lighter
+	category = list("Misc", "Medical Designs")
+	departmental_flags = DEPARTMENTAL_FLAG_MEDICAL | DEPARTMENTAL_FLAG_SERVICE

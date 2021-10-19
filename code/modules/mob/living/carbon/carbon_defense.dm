@@ -2,6 +2,8 @@
 
 /mob/living/carbon/get_eye_protection()
 	. = ..()
+	if(HAS_TRAIT_NOT_FROM(src, TRAIT_BLIND, list(UNCONSCIOUS_TRAIT, HYPNOCHAIR_TRAIT)))
+		return INFINITY //For all my homies that can not see in the world
 	var/obj/item/organ/eyes/E = getorganslot(ORGAN_SLOT_EYES)
 	if(!E)
 		return INFINITY //Can't get flashed without eyes
@@ -16,6 +18,8 @@
 
 /mob/living/carbon/get_ear_protection()
 	. = ..()
+	if(HAS_TRAIT(src, TRAIT_DEAF))
+		return INFINITY //For all my homies that can not hear in the world
 	var/obj/item/organ/ears/E = getorganslot(ORGAN_SLOT_EARS)
 	if(!E)
 		return INFINITY
@@ -46,7 +50,7 @@
 
 /mob/living/carbon/proc/can_catch_item(skip_throw_mode_check)
 	. = FALSE
-	if(!skip_throw_mode_check && !in_throw_mode)
+	if(!skip_throw_mode_check && !throw_mode)
 		return
 	if(get_active_held_item())
 		return
@@ -55,13 +59,13 @@
 	return TRUE
 
 /mob/living/carbon/hitby(atom/movable/AM, skipcatch, hitpush = TRUE, blocked = FALSE, datum/thrownthing/throwingdatum)
-	if(!skipcatch && can_catch_item() && istype(AM, /obj/item) && isturf(AM.loc))
+	if(!skipcatch && can_catch_item() && istype(AM, /obj/item) && !HAS_TRAIT(AM, TRAIT_UNCATCHABLE) && isturf(AM.loc))
 		var/obj/item/I = AM
 		I.attack_hand(src)
 		if(get_active_held_item() == I) //if our attack_hand() picks up the item...
-			visible_message("<span class='warning'>[src] catches [I]!</span>", \
-							"<span class='userdanger'>You catch [I] in mid-air!</span>")
-			throw_mode_off()
+			visible_message(span_warning("[src] catches [I]!"), \
+							span_userdanger("You catch [I] in mid-air!"))
+			throw_mode_off(THROW_MODE_TOGGLE)
 			return TRUE
 	return ..()
 
@@ -86,7 +90,7 @@
 				I.add_mob_blood(src)
 				var/turf/location = get_turf(src)
 				add_splatter_floor(location)
-				if(get_dist(user, src) <= 1)	//people with TK won't get smeared with blood
+				if(get_dist(user, src) <= 1) //people with TK won't get smeared with blood
 					user.add_mob_blood(src)
 				if(affecting.body_zone == BODY_ZONE_HEAD)
 					if(wear_mask)
@@ -106,6 +110,17 @@
 		return
 	var/message_verb_continuous = length(I.attack_verb_continuous) ? "[pick(I.attack_verb_continuous)]" : "attacks"
 	var/message_verb_simple = length(I.attack_verb_simple) ? "[pick(I.attack_verb_simple)]" : "attack"
+	//SKYRAT EDIT ADDITION BEGIN
+	if(I.force && !user.combat_mode)
+		var/random = rand(1,2)
+		switch(random)
+			if(1)
+				message_verb_continuous = "<font color='#ee00ff'>glances</font>"
+				message_verb_simple = "<font color='#ee00ff'>glance</font>"
+			if(2)
+				message_verb_continuous = "<font color='#ee00ff'>maims</font>"
+				message_verb_simple = "<font color='#ee00ff'>maim</font>"
+	//SKYRAT EDIT ADDITION END
 
 	var/extra_wound_details = ""
 	if(I.damtype == BRUTE && hit_bodypart.can_dismember())
@@ -129,10 +144,10 @@
 		attack_message_victim = "[user] [message_verb_continuous] you[message_hit_area] with [I][extra_wound_details]!"
 	if(user == src)
 		attack_message_victim = "You [message_verb_simple] yourself[message_hit_area] with [I][extra_wound_details]!"
-	visible_message("<span class='danger'>[attack_message_spectator]</span>",\
-		"<span class='userdanger'>[attack_message_victim]</span>", null, COMBAT_MESSAGE_RANGE, user)
+	visible_message(span_danger("[attack_message_spectator]"),\
+		span_userdanger("[attack_message_victim]"), null, COMBAT_MESSAGE_RANGE, user)
 	if(user != src)
-		to_chat(user, "<span class='danger'>[attack_message_attacker]</span>")
+		to_chat(user, span_danger("[attack_message_attacker]"))
 	return TRUE
 
 
@@ -140,9 +155,9 @@
 	return //so we don't call the carbon's attack_hand().
 
 //ATTACK HAND IGNORING PARENT RETURN VALUE
-/mob/living/carbon/attack_hand(mob/living/carbon/human/user)
+/mob/living/carbon/attack_hand(mob/living/carbon/human/user, list/modifiers)
 
-	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACK_HAND, user) & COMPONENT_CANCEL_ATTACK_CHAIN)
+	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACK_HAND, user, modifiers) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		. = TRUE
 	for(var/thing in diseases)
 		var/datum/disease/D = thing
@@ -156,8 +171,8 @@
 
 	for(var/datum/surgery/S in surgeries)
 		if(body_position == LYING_DOWN || !S.lying_required)
-			if(user.a_intent == INTENT_HELP || user.a_intent == INTENT_DISARM)
-				if(S.next_step(user, user.a_intent))
+			if(!user.combat_mode)
+				if(S.next_step(user, modifiers))
 					return TRUE
 
 	for(var/i in all_wounds)
@@ -168,25 +183,25 @@
 	return FALSE
 
 
-/mob/living/carbon/attack_paw(mob/living/carbon/human/M)
+/mob/living/carbon/attack_paw(mob/living/carbon/human/user, list/modifiers)
 
-	if(can_inject(M, TRUE))
+	if(try_inject(user, injection_flags = INJECT_TRY_SHOW_ERROR_MESSAGE))
 		for(var/thing in diseases)
 			var/datum/disease/D = thing
 			if((D.spread_flags & DISEASE_SPREAD_CONTACT_SKIN) && prob(85))
-				M.ContactContractDisease(D)
+				user.ContactContractDisease(D)
 
-	for(var/thing in M.diseases)
+	for(var/thing in user.diseases)
 		var/datum/disease/D = thing
 		if(D.spread_flags & DISEASE_SPREAD_CONTACT_SKIN)
 			ContactContractDisease(D)
 
-	if(M.a_intent == INTENT_HELP)
-		help_shake_act(M)
+	if(!user.combat_mode)
+		help_shake_act(user)
 		return FALSE
 
 	if(..()) //successful monkey bite.
-		for(var/thing in M.diseases)
+		for(var/thing in user.diseases)
 			var/datum/disease/D = thing
 			ForceContractDisease(D)
 		return TRUE
@@ -201,8 +216,8 @@
 				if(M.powerlevel < 0)
 					M.powerlevel = 0
 
-				visible_message("<span class='danger'>The [M.name] shocks [src]!</span>", \
-				"<span class='userdanger'>The [M.name] shocks you!</span>")
+				visible_message(span_danger("The [M.name] shocks [src]!"), \
+				span_userdanger("The [M.name] shocks you!"))
 
 				do_sparks(5, TRUE, src)
 				var/power = M.powerlevel + rand(0,3)
@@ -243,7 +258,7 @@
 */
 /mob/living/carbon/proc/disarm(mob/living/carbon/target)
 	if(zone_selected == BODY_ZONE_PRECISE_MOUTH)
-		var/target_on_help_and_unarmed = target.a_intent == INTENT_HELP && !target.get_active_held_item()
+		var/target_on_help_and_unarmed = !target.combat_mode && !target.get_active_held_item()
 		if(target_on_help_and_unarmed || HAS_TRAIT(target, TRAIT_RESTRAINED))
 			do_slap_animation(target)
 			playsound(target.loc, 'sound/weapons/slap.ogg', 50, TRUE, -1)
@@ -305,15 +320,17 @@
 			target_disposal_bin = locate(/obj/machinery/disposal/bin) in target_shove_turf.contents
 			shove_blocked = TRUE
 
-	if(target.IsKnockdown() && !target.IsParalyzed())
+	if(target.body_position == LYING_DOWN && !target.IsParalyzed()) //SKYRAT EDIT CHANGE ORIGINAL: if(target.IsKnockdown() && !target.IsParalyzed())
 		target.Paralyze(SHOVE_CHAIN_PARALYZE)
-		target.visible_message("<span class='danger'>[name] kicks [target.name] onto [target.p_their()] side!</span>",
-						"<span class='userdanger'>You're kicked onto your side by [name]!</span>", "<span class='hear'>You hear aggressive shuffling followed by a loud thud!</span>", COMBAT_MESSAGE_RANGE, src)
-		to_chat(src, "<span class='danger'>You kick [target.name] onto [target.p_their()] side!</span>")
+		target.visible_message(span_danger("[name] kicks [target.name] onto [target.p_their()] side!"),
+						span_userdanger("You're kicked onto your side by [name]!"), span_hear("You hear aggressive shuffling followed by a loud thud!"), COMBAT_MESSAGE_RANGE, src)
+		to_chat(src, span_danger("You kick [target.name] onto [target.p_their()] side!"))
+		target.adjustStaminaLoss(20) //Ouch! SKYRAT EDIT ADDDITON
 		addtimer(CALLBACK(target, /mob/living/proc/SetKnockdown, 0), SHOVE_CHAIN_PARALYZE)
 		log_combat(src, target, "kicks", "onto their side (paralyzing)")
+		return //SKYRAT EDIT ADDITION
 
-	if(shove_blocked && !target.is_shove_knockdown_blocked() && !target.buckled)
+	if(shove_blocked && !target.is_shove_knockdown_blocked() && !target.buckled && target.body_position != LYING_DOWN) //SKYRAT EDIT CHANGE - ORIGINAL: if(shove_blocked && !target.is_shove_knockdown_blocked() && !target.buckled)
 		var/directional_blocked = FALSE
 		if(shove_dir in GLOB.cardinals) //Directional checks to make sure that we're not shoving through a windoor or something like that
 			var/target_turf = get_turf(target)
@@ -327,21 +344,24 @@
 						directional_blocked = TRUE
 						break
 		if((!target_table && !target_collateral_carbon && !target_disposal_bin) || directional_blocked)
-			target.Knockdown(SHOVE_KNOCKDOWN_SOLID)
+			//target.Knockdown(SHOVE_KNOCKDOWN_SOLID) - ORIGINAL
+			target.StaminaKnockdown(10) //SKYRAT EDIT
 			target.visible_message("<span class='danger'>[name] shoves [target.name], knocking [target.p_them()] down!</span>",
 							"<span class='userdanger'>You're knocked down from a shove by [name]!</span>", "<span class='hear'>You hear aggressive shuffling followed by a loud thud!</span>", COMBAT_MESSAGE_RANGE, src)
 			to_chat(src, "<span class='danger'>You shove [target.name], knocking [target.p_them()] down!</span>")
 			log_combat(src, target, "shoved", "knocking them down")
 		else if(target_table)
-			target.Knockdown(SHOVE_KNOCKDOWN_TABLE)
+			//target.Knockdown(SHOVE_KNOCKDOWN_TABLE) - ORIGINAL
+			target.StaminaKnockdown(10) //SKYRAT EDIT
 			target.visible_message("<span class='danger'>[name] shoves [target.name] onto \the [target_table]!</span>",
 							"<span class='userdanger'>You're shoved onto \the [target_table] by [name]!</span>", "<span class='hear'>You hear aggressive shuffling followed by a loud thud!</span>", COMBAT_MESSAGE_RANGE, src)
 			to_chat(src, "<span class='danger'>You shove [target.name] onto \the [target_table]!</span>")
 			target.throw_at(target_table, 1, 1, null, FALSE) //1 speed throws with no spin are basically just forcemoves with a hard collision check
 			log_combat(src, target, "shoved", "onto [target_table] (table)")
 		else if(target_collateral_carbon)
-			target.Knockdown(SHOVE_KNOCKDOWN_HUMAN)
-			target_collateral_carbon.Knockdown(SHOVE_KNOCKDOWN_COLLATERAL)
+			target.StaminaKnockdown(10) //SKYRAT EDIT
+			if(!target_collateral_carbon.is_shove_knockdown_blocked())
+				target_collateral_carbon.StaminaKnockdown(1) //SKYRAT EDIT
 			target.visible_message("<span class='danger'>[name] shoves [target.name] into [target_collateral_carbon.name]!</span>",
 				"<span class='userdanger'>You're shoved into [target_collateral_carbon.name] by [name]!</span>", "<span class='hear'>You hear aggressive shuffling followed by a loud thud!</span>", COMBAT_MESSAGE_RANGE, src)
 			to_chat(src, "<span class='danger'>You shove [target.name] into [target_collateral_carbon.name]!</span>")
@@ -349,14 +369,14 @@
 		else if(target_disposal_bin)
 			target.Knockdown(SHOVE_KNOCKDOWN_SOLID)
 			target.forceMove(target_disposal_bin)
-			target.visible_message("<span class='danger'>[name] shoves [target.name] into \the [target_disposal_bin]!</span>",
-							"<span class='userdanger'>You're shoved into \the [target_disposal_bin] by [target.name]!</span>", "<span class='hear'>You hear aggressive shuffling followed by a loud thud!</span>", COMBAT_MESSAGE_RANGE, src)
-			to_chat(src, "<span class='danger'>You shove [target.name] into \the [target_disposal_bin]!</span>")
+			target.visible_message(span_danger("[name] shoves [target.name] into \the [target_disposal_bin]!"),
+							span_userdanger("You're shoved into \the [target_disposal_bin] by [name]!"), span_hear("You hear aggressive shuffling followed by a loud thud!"), COMBAT_MESSAGE_RANGE, src)
+			to_chat(src, span_danger("You shove [target.name] into \the [target_disposal_bin]!"))
 			log_combat(src, target, "shoved", "into [target_disposal_bin] (disposal bin)")
 	else
-		target.visible_message("<span class='danger'>[name] shoves [target.name]!</span>",
-						"<span class='userdanger'>You're shoved by [name]!</span>", "<span class='hear'>You hear aggressive shuffling!</span>", COMBAT_MESSAGE_RANGE, src)
-		to_chat(src, "<span class='danger'>You shove [target.name]!</span>")
+		target.visible_message(span_danger("[name] shoves [target.name]!"),
+						span_userdanger("You're shoved by [name]!"), span_hear("You hear aggressive shuffling!"), COMBAT_MESSAGE_RANGE, src)
+		to_chat(src, span_danger("You shove [target.name]!"))
 		var/target_held_item = target.get_active_held_item()
 		var/knocked_item = FALSE
 		if(!is_type_in_typecache(target_held_item, GLOB.shove_disarming_types))
@@ -364,14 +384,14 @@
 		if(!target.has_movespeed_modifier(/datum/movespeed_modifier/shove))
 			target.add_movespeed_modifier(/datum/movespeed_modifier/shove)
 			if(target_held_item)
-				target.visible_message("<span class='danger'>[target.name]'s grip on \the [target_held_item] loosens!</span>",
-					"<span class='warning'>Your grip on \the [target_held_item] loosens!</span>", null, COMBAT_MESSAGE_RANGE)
+				target.visible_message(span_danger("[target.name]'s grip on \the [target_held_item] loosens!"),
+					span_warning("Your grip on \the [target_held_item] loosens!"), null, COMBAT_MESSAGE_RANGE)
 			addtimer(CALLBACK(target, /mob/living/carbon/proc/clear_shove_slowdown), SHOVE_SLOWDOWN_LENGTH)
 		else if(target_held_item)
 			target.dropItemToGround(target_held_item)
 			knocked_item = TRUE
-			target.visible_message("<span class='danger'>[target.name] drops \the [target_held_item]!</span>",
-				"<span class='warning'>You drop \the [target_held_item]!</span>", null, COMBAT_MESSAGE_RANGE)
+			target.visible_message(span_danger("[target.name] drops \the [target_held_item]!"),
+				span_warning("You drop \the [target_held_item]!"), null, COMBAT_MESSAGE_RANGE)
 		var/append_message = ""
 		if(target_held_item)
 			if(knocked_item)
@@ -390,13 +410,13 @@
 	remove_movespeed_modifier(/datum/movespeed_modifier/shove)
 	var/active_item = get_active_held_item()
 	if(is_type_in_typecache(active_item, GLOB.shove_disarming_types))
-		visible_message("<span class='warning'>[name] regains their grip on \the [active_item]!</span>", "<span class='warning'>You regain your grip on \the [active_item]</span>", null, COMBAT_MESSAGE_RANGE)
+		visible_message(span_warning("[name] regains their grip on \the [active_item]!"), span_warning("You regain your grip on \the [active_item]"), null, COMBAT_MESSAGE_RANGE)
 
 /mob/living/carbon/blob_act(obj/structure/blob/B)
 	if (stat == DEAD)
 		return
 	else
-		show_message("<span class='userdanger'>The blob attacks!</span>")
+		show_message(span_userdanger("The blob attacks!"))
 		adjustBruteLoss(10)
 
 /mob/living/carbon/emp_act(severity)
@@ -431,7 +451,8 @@
 	//Stun
 	var/should_stun = (!(flags & SHOCK_TESLA) || siemens_coeff > 0.5) && !(flags & SHOCK_NOSTUN)
 	if(should_stun)
-		Paralyze(40)
+		StaminaKnockdown(10, TRUE)
+		//Paralyze(40) - SKYRAT EDIT REMOVAL
 	//Jitter and other fluff.
 	jitteriness += 1000
 	do_jitter_animation(jitteriness)
@@ -443,12 +464,13 @@
 /mob/living/carbon/proc/secondary_shock(should_stun)
 	jitteriness = max(jitteriness - 990, 10)
 	if(should_stun)
-		Paralyze(60)
+		//Paralyze(60) - SKYRAT EDIT REMOVAL
+		StaminaKnockdown(10, TRUE) //SKYRAT EDIT ADDITION
 
 /mob/living/carbon/proc/help_shake_act(mob/living/carbon/M)
 	var/nosound = FALSE //SKYRAT EDIT ADDITION - EMOTES
 	if(on_fire)
-		to_chat(M, "<span class='warning'>You can't put [p_them()] out with just your bare hands!</span>")
+		to_chat(M, span_warning("You can't put [p_them()] out with just your bare hands!"))
 		return
 
 	if(M == src && check_self_for_injuries())
@@ -456,40 +478,52 @@
 
 	if(body_position == LYING_DOWN)
 		if(buckled)
-			to_chat(M, "<span class='warning'>You need to unbuckle [src] first to do that!</span>")
+			to_chat(M, span_warning("You need to unbuckle [src] first to do that!"))
 			return
-		M.visible_message("<span class='notice'>[M] shakes [src] trying to get [p_them()] up!</span>", \
-						null, "<span class='hear'>You hear the rustling of clothes.</span>", DEFAULT_MESSAGE_RANGE, list(M, src))
-		to_chat(M, "<span class='notice'>You shake [src] trying to pick [p_them()] up!</span>")
-		to_chat(src, "<span class='notice'>[M] shakes you to get you up!</span>")
+		M.visible_message(span_notice("[M] shakes [src] trying to get [p_them()] up!"), \
+						null, span_hear("You hear the rustling of clothes."), DEFAULT_MESSAGE_RANGE, list(M, src))
+		to_chat(M, span_notice("You shake [src] trying to pick [p_them()] up!"))
+		to_chat(src, span_notice("[M] shakes you to get you up!"))
 
-	//SKYRAT EDIT ADDITION BEGIN - EMOTES
+	//SKYRAT EDIT ADDITION BEGIN - EMOTES -- SENSITIVE SNOUT TRAIT ADDITION
 	else if(M.zone_selected == BODY_ZONE_PRECISE_MOUTH)
 		nosound = TRUE
-		M.visible_message("<span class='notice'>[M] boops [src]'s nose.", \
-					"<span class='notice'>You boop [src] on the nose.</span>")
 		playsound(src, 'modular_skyrat/modules/emotes/sound/emotes/Nose_boop.ogg', 50, 0)
+		if(HAS_TRAIT(src, TRAIT_SENSITIVESNOUT) && get_location_accessible(src, BODY_ZONE_PRECISE_MOUTH))
+			to_chat(src, "<span class='warning'>[M] boops you on your sensitive nose, sending you to the ground!</span>")
+			src.Knockdown(20)
+			src.apply_damage(30, STAMINA, BODY_ZONE_CHEST)
+		M.visible_message("<span class='notice'>[M] boops [src]'s nose.", \
+		"<span class='notice'>You boop [src] on the nose.</span>")
 	//SKYRAT EDIT ADDITION END
 
 	else if(check_zone(M.zone_selected) == BODY_ZONE_HEAD) //Headpats!
-		SEND_SIGNAL(src, COMSIG_CARBON_HEADPAT, M)
-		M.visible_message("<span class='notice'>[M] gives [src] a pat on the head to make [p_them()] feel better!</span>", \
-					null, "<span class='hear'>You hear a soft patter.</span>", DEFAULT_MESSAGE_RANGE, list(M, src))
-		to_chat(M, "<span class='notice'>You give [src] a pat on the head to make [p_them()] feel better!</span>")
-		to_chat(src, "<span class='notice'>[M] gives you a pat on the head to make you feel better! </span>")
-		//SKYRAT EDIT ADDITION BEGIN - EMOTES
-		if(HAS_TRAIT(src, TRAIT_EXCITABLE))
-			if(!src.dna.species.is_wagging_tail(src))
-				src.emote("wag")
-		//SKYRAT EDIT ADDITION END
+		//SKYRAT EDIT ADDITION
+		if(HAS_TRAIT(M, TRAIT_OVERSIZED) && !HAS_TRAIT(src, TRAIT_OVERSIZED))
+			visible_message(span_warning("[src] tries to pat [M] on the head, but can't reach!"))
+		else //SKYRAT EDIT END
+			SEND_SIGNAL(src, COMSIG_CARBON_HEADPAT, M)
+			M.visible_message(span_notice("[M] gives [src] a pat on the head to make [p_them()] feel better!"), \
+						null, span_hear("You hear a soft patter."), DEFAULT_MESSAGE_RANGE, list(M, src))
+			to_chat(M, span_notice("You give [src] a pat on the head to make [p_them()] feel better!"))
+			to_chat(src, span_notice("[M] gives you a pat on the head to make you feel better! "))
+
+			//SKYRAT EDIT ADDITION BEGIN - EMOTES
+			if(HAS_TRAIT(src, TRAIT_EXCITABLE))
+				if(!src.dna.species.is_wagging_tail(src))
+					src.emote("wag")
+			//SKYRAT EDIT ADDITION END
+
+			if(HAS_TRAIT(src, TRAIT_BADTOUCH))
+				to_chat(M, span_warning("[src] looks visibly upset as you pat [p_them()] on the head."))
 
 	else
 		SEND_SIGNAL(src, COMSIG_CARBON_HUGGED, M)
 		SEND_SIGNAL(M, COMSIG_CARBON_HUG, M, src)
-		M.visible_message("<span class='notice'>[M] hugs [src] to make [p_them()] feel better!</span>", \
-					null, "<span class='hear'>You hear the rustling of clothes.</span>", DEFAULT_MESSAGE_RANGE, list(M, src))
-		to_chat(M, "<span class='notice'>You hug [src] to make [p_them()] feel better!</span>")
-		to_chat(src, "<span class='notice'>[M] hugs you to make you feel better!</span>")
+		M.visible_message(span_notice("[M] hugs [src] to make [p_them()] feel better!"), \
+					null, span_hear("You hear the rustling of clothes."), DEFAULT_MESSAGE_RANGE, list(M, src))
+		to_chat(M, span_notice("You hug [src] to make [p_them()] feel better!"))
+		to_chat(src, span_notice("[M] hugs you to make you feel better!"))
 
 		// Warm them up with hugs
 		share_bodytemperature(M)
@@ -505,14 +539,14 @@
 
 		// Let people know if they hugged someone really warm or really cold
 		if(M.bodytemperature > BODYTEMP_HEAT_DAMAGE_LIMIT)
-			to_chat(src, "<span class='warning'>It feels like [M] is over heating as they hug you.</span>")
+			to_chat(src, span_warning("It feels like [M] is over heating as [M.p_they()] hug[M.p_s()] you."))
 		else if(M.bodytemperature < BODYTEMP_COLD_DAMAGE_LIMIT)
-			to_chat(src, "<span class='warning'>It feels like [M] is freezing as they hug you.</span>")
+			to_chat(src, span_warning("It feels like [M] is freezing as [M.p_they()] hug[M.p_s()] you."))
 
 		if(bodytemperature > BODYTEMP_HEAT_DAMAGE_LIMIT)
-			to_chat(M, "<span class='warning'>It feels like [src] is over heating as you hug them.</span>")
+			to_chat(M, span_warning("It feels like [src] is over heating as you hug [p_them()]."))
 		else if(bodytemperature < BODYTEMP_COLD_DAMAGE_LIMIT)
-			to_chat(M, "<span class='warning'>It feels like [src] is freezing as you hug them.</span>")
+			to_chat(M, span_warning("It feels like [src] is freezing as you hug [p_them()]."))
 
 		if(HAS_TRAIT(M, TRAIT_FRIENDLY))
 			var/datum/component/mood/hugger_mood = M.GetComponent(/datum/component/mood)
@@ -521,6 +555,9 @@
 				SEND_SIGNAL(src, COMSIG_ADD_MOOD_EVENT, "friendly_hug", /datum/mood_event/besthug, M)
 			else if (hugger_mood.sanity >= SANITY_DISTURBED)
 				SEND_SIGNAL(src, COMSIG_ADD_MOOD_EVENT, "friendly_hug", /datum/mood_event/betterhug, M)
+
+		if(HAS_TRAIT(src, TRAIT_BADTOUCH))
+			to_chat(M, span_warning("[src] looks visibly upset as you hug [p_them()]."))
 
 	AdjustStun(-60)
 	AdjustKnockdown(-60)
@@ -554,8 +591,8 @@
 			if(!embeds)
 				embeds = TRUE
 				// this way, we only visibly try to examine ourselves if we have something embedded, otherwise we'll still hug ourselves :)
-				visible_message("<span class='notice'>[src] examines [p_them()]self.</span>", \
-					"<span class='notice'>You check yourself for shrapnel.</span>")
+				visible_message(span_notice("[src] examines [p_them()]self."), \
+					span_notice("You check yourself for shrapnel."))
 			if(I.isEmbedHarmless())
 				to_chat(src, "\t <a href='?src=[REF(src)];embedded_object=[REF(I)];embedded_limb=[REF(LB)]' class='warning'>There is \a [I] stuck to your [LB.name]!</a>")
 			else
@@ -564,7 +601,7 @@
 	return embeds
 
 
-/mob/living/carbon/flash_act(intensity = 1, override_blindness_check = 0, affect_silicon = 0, visual = 0)
+/mob/living/carbon/flash_act(intensity = 1, override_blindness_check = 0, affect_silicon = 0, visual = 0, type = /atom/movable/screen/fullscreen/flash, length = 25)
 	var/obj/item/organ/eyes/eyes = getorganslot(ORGAN_SLOT_EYES)
 	if(!eyes) //can't flash what can't see!
 		return
@@ -577,16 +614,16 @@
 			return
 
 		if (damage == 1)
-			to_chat(src, "<span class='warning'>Your eyes sting a little.</span>")
+			to_chat(src, span_warning("Your eyes sting a little."))
 			if(prob(40))
 				eyes.applyOrganDamage(1)
 
 		else if (damage == 2)
-			to_chat(src, "<span class='warning'>Your eyes burn.</span>")
+			to_chat(src, span_warning("Your eyes burn."))
 			eyes.applyOrganDamage(rand(2, 4))
 
 		else if( damage >= 3)
-			to_chat(src, "<span class='warning'>Your eyes itch and burn severely!</span>")
+			to_chat(src, span_warning("Your eyes itch and burn severely!"))
 			eyes.applyOrganDamage(rand(12, 16))
 
 		if(eyes.damage > 10)
@@ -596,20 +633,20 @@
 			if(eyes.damage > 20)
 				if(prob(eyes.damage - 20))
 					if(!HAS_TRAIT(src, TRAIT_NEARSIGHT))
-						to_chat(src, "<span class='warning'>Your eyes start to burn badly!</span>")
+						to_chat(src, span_warning("Your eyes start to burn badly!"))
 					become_nearsighted(EYE_DAMAGE)
 
 				else if(prob(eyes.damage - 25))
 					if(!is_blind())
-						to_chat(src, "<span class='warning'>You can't see anything!</span>")
+						to_chat(src, span_warning("You can't see anything!"))
 					eyes.applyOrganDamage(eyes.maxHealth)
 
 			else
-				to_chat(src, "<span class='warning'>Your eyes are really starting to hurt. This can't be good for you!</span>")
+				to_chat(src, span_warning("Your eyes are really starting to hurt. This can't be good for you!"))
 		return 1
 	else if(damage == 0) // just enough protection
 		if(prob(20))
-			to_chat(src, "<span class='notice'>Something bright flashes in the corner of your vision!</span>")
+			to_chat(src, span_notice("Something bright flashes in the corner of your vision!"))
 
 
 /mob/living/carbon/soundbang_act(intensity = 1, stun_pwr = 20, damage_pwr = 5, deafen_pwr = 15)
@@ -622,7 +659,7 @@
 	if(effect_amount > 0)
 		if(stun_pwr)
 			Paralyze((stun_pwr*effect_amount)*0.1)
-			Knockdown(stun_pwr*effect_amount)
+			StaminaKnockdown(stun_pwr/2) //SKYRAT EDIT CHANGE: Knockdown(stun_pwr*effect_amount)
 
 		if(ears && (deafen_pwr || damage_pwr))
 			var/ear_damage = damage_pwr * effect_amount
@@ -630,13 +667,13 @@
 			ears.adjustEarDamage(ear_damage,deaf)
 
 			if(ears.damage >= 15)
-				to_chat(src, "<span class='warning'>Your ears start to ring badly!</span>")
+				to_chat(src, span_warning("Your ears start to ring badly!"))
 				if(prob(ears.damage - 5))
-					to_chat(src, "<span class='userdanger'>You can't hear anything!</span>")
+					to_chat(src, span_userdanger("You can't hear anything!"))
 					ears.damage = min(ears.damage, ears.maxHealth) // does this actually do anything useful? all this would do is set an upper bound on damage, is this supposed to be a max?
 					// you need earmuffs, inacusiate, or replacement
 			else if(ears.damage >= 5)
-				to_chat(src, "<span class='warning'>Your ears start to ring!</span>")
+				to_chat(src, span_warning("Your ears start to ring!"))
 			SEND_SOUND(src, sound('sound/weapons/flash_ring.ogg',0,1,0,250))
 		return effect_amount //how soundbanged we are
 
@@ -706,17 +743,17 @@
 		return
 	var/starting_hand_index = active_hand_index
 	if(starting_hand_index == grasped_part.held_index)
-		to_chat(src, "<span class='danger'>You can't grasp your [grasped_part.name] with itself!</span>")
+		to_chat(src, span_danger("You can't grasp your [grasped_part.name] with itself!"))
 		return
 
-	to_chat(src, "<span class='warning'>You try grasping at your [grasped_part.name], trying to stop the bleeding...</span>")
+	to_chat(src, span_warning("You try grasping at your [grasped_part.name], trying to stop the bleeding..."))
 	if(!do_after(src, 1.5 SECONDS))
-		to_chat(src, "<span class='danger'>You fail to grasp your [grasped_part.name].</span>")
+		to_chat(src, span_danger("You fail to grasp your [grasped_part.name]."))
 		return
 
 	var/obj/item/self_grasp/grasp = new
 	if(starting_hand_index != active_hand_index || !put_in_active_hand(grasp))
-		to_chat(src, "<span class='danger'>You fail to grasp your [grasped_part.name].</span>")
+		to_chat(src, span_danger("You fail to grasp your [grasped_part.name]."))
 		QDEL_NULL(grasp)
 		return
 	grasp.grasp_limb(grasped_part)
@@ -741,7 +778,7 @@
 
 /obj/item/self_grasp/Destroy()
 	if(user)
-		to_chat(user, "<span class='warning'>You stop holding onto your[grasped_part ? " [grasped_part.name]" : "self"].</span>")
+		to_chat(user, span_warning("You stop holding onto your[grasped_part ? " [grasped_part.name]" : "self"]."))
 		UnregisterSignal(user, COMSIG_PARENT_QDELETING)
 	if(grasped_part)
 		UnregisterSignal(grasped_part, list(COMSIG_CARBON_REMOVE_LIMB, COMSIG_PARENT_QDELETING))
@@ -752,6 +789,7 @@
 
 /// The limb or the whole damn person we were grasping got deleted or dismembered, so we don't care anymore
 /obj/item/self_grasp/proc/qdel_void()
+	SIGNAL_HANDLER
 	qdel(src)
 
 /// We've already cleared that the bodypart in question is bleeding in [the place we create this][/mob/living/carbon/proc/grabbedby], so set up the connections
@@ -767,7 +805,7 @@
 	RegisterSignal(user, COMSIG_PARENT_QDELETING, .proc/qdel_void)
 	RegisterSignal(grasped_part, list(COMSIG_CARBON_REMOVE_LIMB, COMSIG_PARENT_QDELETING), .proc/qdel_void)
 
-	user.visible_message("<span class='danger'>[user] grasps at [user.p_their()] [grasped_part.name], trying to stop the bleeding.</span>", "<span class='notice'>You grab hold of your [grasped_part.name] tightly.</span>", vision_distance=COMBAT_MESSAGE_RANGE)
+	user.visible_message(span_danger("[user] grasps at [user.p_their()] [grasped_part.name], trying to stop the bleeding."), span_notice("You grab hold of your [grasped_part.name] tightly."), vision_distance=COMBAT_MESSAGE_RANGE)
 	playsound(get_turf(src), 'sound/weapons/thudswoosh.ogg', 50, TRUE, -1)
 	return TRUE
 

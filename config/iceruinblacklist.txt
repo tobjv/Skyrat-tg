@@ -5,6 +5,7 @@
 
 ##RESPAWN
 #_maps/RandomRuins/AnywhereRuins/golem_ship.dmm
+#modular_skyrat/modules/mapping/_maps/RandomRuins/IceRuins/icemoon_underground_syndicate_base1_skyrat.dmm
 
 ##MEGAFAUNA
 #_maps/RandomRuins/IceRuins/icemoon_surface_mining_site.dmm
@@ -23,3 +24,6 @@
 #_maps/RandomRuins/IceRuins/icemoon_underground_wrath.dmm
 #_maps/RandomRuins/IceRuins/icemoon_underground_bathhouse.dmm
 #_maps/RandomRuins/AnywhereRuins/fountain_hall.dmm
+#_maps/RandomRuins/IceRuins/icemoon_underground_abandoned_homestead.dmm
+#_maps/RandomRuins/IceRuins/icemoon_underground_abandoned_plasma_facility.dmm
+#_maps/RandomRuins/IceRuins/icemoon_underground_frozen_comms.dmm

@@ -6,7 +6,6 @@
 	density = TRUE
 	anchored = TRUE
 	layer = TABLE_LAYER
-	climbable = TRUE
 	obj_flags = CAN_BE_HIT
 	pass_flags = LETPASSTHROW
 
@@ -17,22 +16,9 @@
 
 	var/list/searchedby	= list()// Characters that have searched this trashpile, with values of searched time.
 
-	var/chance_alpha	= 99 // Alpha list is the normal maint loot table.
-	var/chance_beta		= 1	 // Beta list is unique items only, and will only spawn one of each.
-
-	//These are types that can only spawn once, and then will be removed from this list.
-	var/global/list/unique_beta = list(
-		/obj/item/gun/ballistic/automatic/pistol,
-		/obj/item/clothing/glasses/thermal,
-		/obj/item/clothing/gloves/tackler/combat/insulated,
-		/obj/item/disk/nuclear/fake,
-		/obj/item/pen/edagger
-	)
-
-	var/global/list/allocated_beta = list()
-
-/obj/structure/trash_pile/Initialize()
+/obj/structure/trash_pile/Initialize(mapload)
 	. = ..()
+	AddElement(/datum/element/climbable)
 	icon_state = pick(
 		"pile1",
 		"pile2",
@@ -64,11 +50,7 @@
 			to_chat(user,"<span class='warning'>There's nothing else for you in \the [src]!</span>")
 		//You found an item!
 		else
-			var/luck = rand(1,100)
-			if(luck <= chance_alpha)
-				produce_alpha_item()
-			else if(luck <= chance_alpha+chance_beta)
-				produce_beta_item()
+			produce_alpha_item()
 			to_chat(user,"<span class='notice'>You found something!</span>")
 			searchedby += user.ckey
 
@@ -86,27 +68,11 @@
 
 //Random lists
 /obj/structure/trash_pile/proc/produce_alpha_item()
-	var/lootspawn = pickweight(GLOB.maintenance_loot)
+	var/lootspawn = pick_weight(GLOB.maintenance_loot)
 	while(islist(lootspawn))
-		lootspawn = pickweight(lootspawn)
+		lootspawn = pick_weight(lootspawn)
 	var/obj/item/I = new lootspawn(get_turf(src))
 	return I
-
-/obj/structure/trash_pile/proc/produce_beta_item()
-	var/path = pick_n_take(unique_beta)
-	if(!path) //Tapped out, reallocate?
-		for(var/P in allocated_beta)
-			var/obj/item/I = allocated_beta[P]
-			if(QDELETED(I))
-				allocated_beta -= P
-				path = P
-				break
-	if(path)
-		var/obj/item/I = new path(get_turf(src))
-		allocated_beta[path] = I
-		return I
-	else
-		return produce_alpha_item()
 
 /obj/structure/trash_pile/MouseDrop_T(atom/movable/O, mob/user)
 	if(user == O && iscarbon(O))
@@ -148,8 +114,8 @@
 		return FALSE
 	return TRUE
 
-/obj/structure/trash_pile/attackby(obj/item/I, mob/user, params)
-	if(user.a_intent == INTENT_HELP)
+/obj/structure/trash_pile/attackby(obj/item/I, mob/living/user, params)
+	if(!user.combat_mode)
 		if(can_hide_item(I))
 			to_chat(user,"<span class='notice'>You begin to stealthily hide [I] in the [src].</span>")
 			if(do_mob(user, user, hide_item_time))

@@ -20,24 +20,27 @@
  * * grant any actions the mob has to the client
  * * calls [auto_deadmin_on_login](mob.html#proc/auto_deadmin_on_login)
  * * send signal COMSIG_MOB_CLIENT_LOGIN
+ * * attaches the ash listener element so clients can hear weather
  * client can be deleted mid-execution of this proc, chiefly on parent calls, with lag
  */
 /mob/Login()
 	if(!client)
 		return FALSE
 	add_to_player_list()
-	lastKnownIP	= client.address
-	computer_id	= client.computer_id
+	lastKnownIP = client.address
+	computer_id = client.computer_id
 	log_access("Mob Login: [key_name(src)] was assigned to a [type]")
 	world.update_status()
-	client.screen = list()				//remove hud items just in case
+	client.screen = list() //remove hud items just in case
 	client.images = list()
+	client.set_right_click_menu_mode(shift_to_open_context_menu)
 
 	if(!hud_used)
 		create_mob_hud()
 	if(hud_used)
 		hud_used.show_hud(hud_used.hud_version)
-		hud_used.update_ui_style(ui_style2icon(client.prefs.UI_style))
+		hud_used.update_ui_style(ui_style2icon(client.prefs?.read_preference(/datum/preference/choiced/ui_style)))
+		hud_used.update_erp_ui_style(erp_ui_style2icon(client.prefs?.read_preference(/datum/preference/choiced/ui_style))) //SKYRAT EDIT - ADDITION - ERP ICONS FIX
 
 	next_move = 1
 
@@ -45,6 +48,9 @@
 
 	if(!client)
 		return FALSE
+
+	//We do this here to prevent hanging refs from ghostize or whatever, since if we were in another mob before this'll take care of it
+	clear_client_in_contents()
 
 	SEND_SIGNAL(src, COMSIG_MOB_LOGIN)
 
@@ -77,7 +83,7 @@
 		if(client.view_size)
 			client.view_size.resetToDefault() // Resets the client.view in case it was changed.
 		else
-			client.change_view(getScreenSize(client.prefs.widescreenpref))
+			client.change_view(getScreenSize(client.prefs.read_preference(/datum/preference/toggle/widescreen)))
 
 		if(client.player_details.player_actions.len)
 			for(var/datum/action/A in client.player_details.player_actions)
@@ -90,8 +96,13 @@
 		auto_deadmin_on_login()
 
 	log_message("Client [key_name(src)] has taken ownership of mob [src]([src.type])", LOG_OWNERSHIP)
+	log_mob_tag("\[[tag]\] NEW OWNER: [key_name(src)]")
 	SEND_SIGNAL(src, COMSIG_MOB_CLIENT_LOGIN, client)
 	client.init_verbs()
+
+	AddElement(/datum/element/weather_listener, /datum/weather/ash_storm, ZTRAIT_ASHSTORM, GLOB.ash_storm_sounds)
+
+	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_MOB_LOGGED_IN, src)
 
 	return TRUE
 

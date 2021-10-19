@@ -74,7 +74,7 @@
 	if(..())
 		return
 	var/mob/living/silicon/ai/AI = usr
-	AI.ai_alerts()
+	AI.alert_control.ui_interact(AI)
 
 /atom/movable/screen/ai/announcement
 	name = "Make Vox Announcement"
@@ -191,7 +191,7 @@
 
 // Language menu
 	using = new /atom/movable/screen/language_menu
-	using.screen_loc = ui_borg_language_menu
+	using.screen_loc = ui_ai_language_menu
 	using.hud = src
 	static_inventory += using
 

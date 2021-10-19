@@ -1,6 +1,7 @@
 /datum/computer_file/program/radar //generic parent that handles most of the process
 	filename = "genericfinder"
 	filedesc = "debug_finder"
+	category = PROGRAM_CATEGORY_CREW
 	ui_header = "borg_mon.gif" //DEBUG -- new icon before PR
 	program_icon_state = "radarntos"
 	requires_ntnet = TRUE
@@ -15,7 +16,7 @@
 	var/atom/selected
 	///Used to store when the next scan is available. Updated by the scan() proc.
 	var/next_scan = 0
-	///Used to keep track of the last value program_icon_state was set to, to prevent constant unnecessary update_icon() calls
+	///Used to keep track of the last value program_icon_state was set to, to prevent constant unnecessary update_appearance() calls
 	var/last_icon_state = ""
 	///Used by the tgui interface, themed NT or Syndicate.
 	var/arrowstyle = "ntosradarpointer.png"
@@ -97,7 +98,7 @@
 
 	if(get_dist_euclidian(here_turf, target_turf) > 24)
 		userot = TRUE
-		rot = round(Get_Angle(here_turf, target_turf))
+		rot = round(get_angle(here_turf, target_turf))
 	else
 		if(target_turf.z > here_turf.z)
 			pointer="caret-up"
@@ -174,7 +175,7 @@
 	if(!trackable(signal))
 		program_icon_state = "[initial(program_icon_state)]lost"
 		if(last_icon_state != program_icon_state)
-			computer.update_icon()
+			computer.update_appearance()
 			last_icon_state = program_icon_state
 		return
 
@@ -192,7 +193,7 @@
 			program_icon_state = "[initial(program_icon_state)]far"
 
 	if(last_icon_state != program_icon_state)
-		computer.update_icon()
+		computer.update_appearance()
 		last_icon_state = program_icon_state
 	computer.setDir(get_dir(here_turf, target_turf))
 
@@ -241,13 +242,12 @@
 /datum/computer_file/program/radar/lifeline/trackable(mob/living/carbon/human/humanoid)
 	if(!humanoid || !istype(humanoid))
 		return FALSE
-	if(..() && istype(humanoid.w_uniform, /obj/item/clothing/under))
-
-		var/obj/item/clothing/under/uniform = humanoid.w_uniform
-		if(!uniform.has_sensor || (uniform.sensor_mode < SENSOR_COORDS)) // Suit sensors must be on maximum.
-			return FALSE
-
-		return TRUE
+	if(..())
+		if (istype(humanoid.w_uniform, /obj/item/clothing/under))
+			var/obj/item/clothing/under/uniform = humanoid.w_uniform
+			if(uniform.has_sensor && uniform.sensor_mode >= SENSOR_COORDS) // Suit sensors must be on maximum
+				return TRUE
+	return FALSE
 
 ////////////////////////
 //Nuke Disk Finder App//
@@ -257,6 +257,7 @@
 /datum/computer_file/program/radar/fission360
 	filename = "fission360"
 	filedesc = "Fission360"
+	category = PROGRAM_CATEGORY_MISC
 	program_icon_state = "radarsyndicate"
 	extended_desc = "This program allows for tracking of nuclear authorization disks and warheads."
 	requires_ntnet = FALSE
@@ -269,7 +270,7 @@
 	pointercolor = "red"
 
 /datum/computer_file/program/radar/fission360/find_atom()
-	return locate(selected) in GLOB.poi_list
+	return SSpoints_of_interest.get_poi_atom_by_ref(selected)
 
 /datum/computer_file/program/radar/fission360/scan()
 	if(world.time < next_scan)
@@ -284,7 +285,7 @@
 			name = nuke.name,
 			)
 		objects += list(nukeinfo)
-	var/obj/item/disk/nuclear/disk = locate() in GLOB.poi_list
+	var/obj/item/disk/nuclear/disk = locate() in SSpoints_of_interest.real_nuclear_disks
 	var/list/nukeinfo = list(
 		ref = REF(disk),
 		name = "Nuke Auth. Disk",

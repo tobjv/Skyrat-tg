@@ -43,7 +43,7 @@ GLOBAL_VAR_INIT(cmp_field, "name")
 	return sorttext(a.ckey, b.ckey)
 
 /proc/cmp_subsystem_init(datum/controller/subsystem/a, datum/controller/subsystem/b)
-	return initial(b.init_order) - initial(a.init_order)	//uses initial() so it can be used on types
+	return initial(b.init_order) - initial(a.init_order) //uses initial() so it can be used on types
 
 /proc/cmp_subsystem_display(datum/controller/subsystem/a, datum/controller/subsystem/b)
 	return sorttext(b.name, a.name)
@@ -93,8 +93,8 @@ GLOBAL_VAR_INIT(cmp_field, "name")
 	return A.totalResistance() - B.totalResistance()
 
 /proc/cmp_quirk_asc(datum/quirk/A, datum/quirk/B)
-	var/a_sign = num2sign(initial(A.value) * -1)
-	var/b_sign = num2sign(initial(B.value) * -1)
+	var/a_sign = SIGN(initial(A.value) * -1)
+	var/b_sign = SIGN(initial(B.value) * -1)
 
 	// Neutral traits go last.
 	if(a_sign == 0)
@@ -111,6 +111,9 @@ GLOBAL_VAR_INIT(cmp_field, "name")
 		return sorttext(b_name, a_name)
 
 /proc/cmp_job_display_asc(datum/job/A, datum/job/B)
+	return A.display_order - B.display_order
+
+/proc/cmp_department_display_asc(datum/job_department/A, datum/job_department/B)
 	return A.display_order - B.display_order
 
 /proc/cmp_reagents_asc(datum/reagent/a, datum/reagent/b)
@@ -130,6 +133,10 @@ GLOBAL_VAR_INIT(cmp_field, "name")
 
 /proc/cmp_mob_realname_dsc(mob/A,mob/B)
 	return sorttext(A.real_name,B.real_name)
+
+/// Orders by integrated circuit weight
+/proc/cmp_port_order_asc(datum/port/compare1, datum/port/compare2)
+	return compare1.order - compare2.order
 
 /**
  * Sorts crafting recipe requirements before the crafting recipe is inserted into GLOB.crafting_recipes

@@ -8,7 +8,7 @@
 		var/cap = CONFIG_GET(number/monkeycap)
 		if (LAZYLEN(SSmobs.cubemonkeys) > cap)
 			if (spawner)
-				to_chat(spawner, "<span class='warning'>Bluespace harmonics prevent the spawning of more than [cap] monkeys on the station at one time!</span>")
+				to_chat(spawner, span_warning("Bluespace harmonics prevent the spawning of more than [cap] monkeys on the station at one time!"))
 			return INITIALIZE_HINT_QDEL
 		SSmobs.cubemonkeys += src
 	return ..()
@@ -20,7 +20,7 @@
 /mob/living/carbon/human/species/monkey/angry
 	ai_controller = /datum/ai_controller/monkey/angry
 
-/mob/living/carbon/human/species/monkey/angry/Initialize()
+/mob/living/carbon/human/species/monkey/angry/Initialize(mapload)
 	. = ..()
 	if(prob(10))
 		var/obj/item/clothing/head/helmet/justice/escape/helmet = new(src)
@@ -36,11 +36,11 @@
 	var/ancestor_name
 	/// The number of times Pun Pun has died since he was last gibbed
 	var/ancestor_chain = 1
-	var/relic_hat	//Note: these two are paths
+	var/relic_hat //Note: these two are paths
 	var/relic_mask
 	var/memory_saved = FALSE
 
-/mob/living/carbon/human/species/monkey/punpun/Initialize()
+/mob/living/carbon/human/species/monkey/punpun/Initialize(mapload)
 	Read_Memory()
 
 	var/name_to_use = name
@@ -67,7 +67,7 @@
 	if(relic_mask)
 		equip_to_slot_or_del(new relic_mask, ITEM_SLOT_MASK)
 
-/mob/living/carbon/human/species/monkey/punpun/Life()
+/mob/living/carbon/human/species/monkey/punpun/Life(delta_time = SSMOBS_DT, times_fired)
 	if(!stat && SSticker.current_state == GAME_STATE_FINISHED && !memory_saved)
 		Write_Memory(FALSE, FALSE)
 		memory_saved = TRUE
@@ -81,10 +81,10 @@
 /mob/living/carbon/human/species/monkey/punpun/proc/Read_Memory()
 	if(fexists("data/npc_saves/Punpun.sav")) //legacy compatability to convert old format to new
 		var/savefile/S = new /savefile("data/npc_saves/Punpun.sav")
-		S["ancestor_name"]	>> ancestor_name
+		S["ancestor_name"] >> ancestor_name
 		S["ancestor_chain"] >> ancestor_chain
-		S["relic_hat"]		>> relic_hat
-		S["relic_mask"]		>> relic_mask
+		S["relic_hat"] >> relic_hat
+		S["relic_mask"] >> relic_mask
 		fdel("data/npc_saves/Punpun.sav")
 	else
 		var/json_file = file("data/npc_saves/Punpun.json")

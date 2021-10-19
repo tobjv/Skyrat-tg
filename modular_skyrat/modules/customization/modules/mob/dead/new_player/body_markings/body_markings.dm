@@ -8,12 +8,12 @@
 	var/icon_state
 	///The preview name of the body marking. NEEDS A UNIQUE NAME
 	var/name
-	///The color the marking defaults to, important for randomisations. either a hex color ie."FFF" or a define like DEFAULT_PRIMARY
+	///The color the marking defaults to, important for randomisations. either a hex color ie."#FFFFFF" or a define like DEFAULT_PRIMARY
 	var/default_color
 	///Which bodyparts does the marking affect in BITFLAGS!! (HEAD, CHEST, ARM_LEFT, ARM_RIGHT, HAND_LEFT, HAND_RIGHT, LEG_RIGHT, LEG_LEFT)
 	var/affected_bodyparts
 	///Which species is this marking recommended to. Important for randomisations.
-	var/recommended_species = list("mammal")
+	var/recommended_species = list(SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL)
 	///If this is on the color customization will show up despite the pref settings, it will also cause the marking to not reset colors to match the defaults
 	var/always_color_customizable
 	///Whether the body marking sprite is the same for both sexes or not. Only relevant for chest right now.
@@ -21,7 +21,7 @@
 
 /datum/body_marking/New()
 	if(!default_color)
-		default_color = "FFF"
+		default_color = "#FFFFFF"
 
 /datum/body_marking/proc/get_default_color(var/list/features, var/datum/species/pref_species) //Needs features for the color information
 	var/list/colors
@@ -44,39 +44,45 @@
 
 //Use this one for things with pre-set default colors, I guess
 /datum/body_marking/other
-	icon = 'modular_skyrat/modules/customization/icons/mob/body_markings/other_markings.dmi'
+	icon = 'modular_skyrat/master_files/icons/mob/body_markings/other_markings.dmi'
 	recommended_species = null
 
 /datum/body_marking/other/drake_bone
 	name = "Drake Bone"
 	icon_state = "drakebone"
-	default_color = "CCC"
+	default_color = "#CCCCCC"
 	affected_bodyparts = CHEST | HAND_LEFT | HAND_RIGHT
 	gendered = FALSE
 
 /datum/body_marking/other/tonage
 	name = "Body Tonage"
 	icon_state = "tonage"
-	default_color = "555"
+	default_color = "#555555"
 	affected_bodyparts = CHEST
 	gendered = FALSE
+
+/datum/body_marking/other/weight
+	name = "Body Weight"
+	icon_state = "weight"
+	default_color = DEFAULT_PRIMARY
+	affected_bodyparts = CHEST
 
 /datum/body_marking/other/pilot
 	name = "Pilot"
 	icon_state = "pilot"
-	default_color = "CCC"
+	default_color = "#CCCCCC"
 	affected_bodyparts = HEAD | ARM_LEFT | ARM_RIGHT | HAND_LEFT | HAND_RIGHT
 
 /datum/body_marking/other/pilot_jaw
 	name = "Pilot Jaw"
 	icon_state = "pilot_jaw"
-	default_color = "CCC"
+	default_color = "#CCCCCC"
 	affected_bodyparts = HEAD
 
 /datum/body_marking/other/drake_eyes
 	name = "Drake Eyes"
 	icon_state = "drakeeyes"
-	default_color = "F00"
+	default_color = "#FF0000"
 	affected_bodyparts = HEAD
 	always_color_customizable = TRUE
 
@@ -90,8 +96,13 @@
 	icon_state = "bands_foot"
 	affected_bodyparts = LEG_RIGHT | LEG_LEFT
 
+/datum/body_marking/other/anklet
+	name = "Anklet"
+	icon_state = "anklet"
+	affected_bodyparts = LEG_RIGHT | LEG_LEFT
+
 /datum/body_marking/secondary
-	icon = 'modular_skyrat/modules/customization/icons/mob/body_markings/secondary_markings.dmi'
+	icon = 'modular_skyrat/master_files/icons/mob/body_markings/secondary_markings.dmi'
 	default_color = DEFAULT_SECONDARY
 
 /datum/body_marking/secondary/tajaran
@@ -158,6 +169,16 @@
 	name = "Corgi"
 	icon_state = "corgi"
 	affected_bodyparts = HEAD | CHEST | ARM_LEFT | ARM_RIGHT | HAND_LEFT | HAND_RIGHT | LEG_RIGHT | LEG_LEFT
+
+/datum/body_marking/secondary/leopard1
+	name = "Leopard"
+	icon_state = "leopard1"
+	affected_bodyparts = CHEST | ARM_LEFT | ARM_RIGHT | HAND_LEFT | HAND_RIGHT | LEG_RIGHT | LEG_LEFT
+
+/datum/body_marking/secondary/leopard2
+	name = "Leopard (alt)"
+	icon_state = "leopard2"
+	affected_bodyparts = CHEST
 
 /datum/body_marking/secondary/skunk
 	name = "Skunk"
@@ -258,7 +279,7 @@
 	name = "Xeno"
 	icon_state = "xeno"
 	affected_bodyparts = CHEST | ARM_LEFT | ARM_RIGHT | LEG_RIGHT | LEG_LEFT
-	recommended_species = list("xeno")
+	recommended_species = list(SPECIES_XENO)
 
 /datum/body_marking/secondary/datashark
 	name = "Datashark"
@@ -274,6 +295,21 @@
 	name = "Belly Slim"
 	icon_state = "bellyslim"
 	affected_bodyparts = HEAD | CHEST | LEG_RIGHT | LEG_LEFT
+
+/datum/body_marking/secondary/bellyslimalt
+	name = "Belly Slim Alternative"
+	icon_state = "bellyslim_alt"
+	affected_bodyparts = CHEST
+
+/datum/body_marking/secondary/bellyandbutt
+	name = "Belly and Butt"
+	icon_state = "bellyandbutt"
+	affected_bodyparts = CHEST
+
+/datum/body_marking/secondary/butt
+	name = "Butt"
+	icon_state = "butt"
+	affected_bodyparts = CHEST
 
 /datum/body_marking/secondary/handsfeet
 	name = "Hands Feet"
@@ -311,7 +347,7 @@
 	affected_bodyparts = HEAD | CHEST | ARM_LEFT | ARM_RIGHT | HAND_LEFT | HAND_RIGHT | LEG_RIGHT | LEG_LEFT
 
 /datum/body_marking/tertiary
-	icon = 'modular_skyrat/modules/customization/icons/mob/body_markings/tertiary_markings.dmi'
+	icon = 'modular_skyrat/master_files/icons/mob/body_markings/tertiary_markings.dmi'
 	default_color = DEFAULT_TERTIARY
 
 /datum/body_marking/tertiary/redpanda
@@ -428,13 +464,13 @@
 	name = "Xeno Head"
 	icon_state = "xeno"
 	affected_bodyparts = HEAD
-	recommended_species = list("xeno")
+	recommended_species = list(SPECIES_XENO)
 
 //TODO: Make these markings associated with their assigned bodyparts rather than mob dna.
 /datum/body_marking/tattoo
-	icon = 'modular_skyrat/modules/customization/icons/mob/body_markings/tattoo_markings.dmi'
+	icon = 'modular_skyrat/master_files/icons/mob/body_markings/tattoo_markings.dmi'
 	recommended_species = null
-	default_color = "122" //slightly faded ink.
+	default_color = "#112222" //slightly faded ink.
 	always_color_customizable = TRUE
 	gendered = FALSE
 

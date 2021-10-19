@@ -22,14 +22,14 @@
 				status += LB.heavy_brute_msg
 
 		if(burndamage >= 20 && status)
-			status += "and "
-			switch(burndamage)
-				if(20 to 50)
-					status += LB.light_burn_msg
-				if(51 to 75)
-					status += LB.medium_burn_msg
-				if(76 to 100)
-					status += LB.heavy_burn_msg
+			status += " and "
+		switch(burndamage)
+			if(20 to 50)
+				status += LB.light_burn_msg
+			if(51 to 75)
+				status += LB.medium_burn_msg
+			if(76 to 100)
+				status += LB.heavy_burn_msg
 
 		if(status)
 			any_bodypart_damage = TRUE

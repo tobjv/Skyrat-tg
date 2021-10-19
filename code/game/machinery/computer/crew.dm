@@ -1,7 +1,7 @@
 /// How often the sensor data is updated
-#define SENSORS_UPDATE_PERIOD	10 SECONDS //How often the sensor data updates.
+#define SENSORS_UPDATE_PERIOD 10 SECONDS //How often the sensor data updates.
 /// The job sorting ID associated with otherwise unknown jobs
-#define UNKNOWN_JOB_ID			81
+#define UNKNOWN_JOB_ID 81
 
 /obj/machinery/computer/crew
 	name = "crew monitoring console"
@@ -14,10 +14,73 @@
 	circuit = /obj/item/circuitboard/computer/crew
 	light_color = LIGHT_COLOR_BLUE
 
+/obj/machinery/computer/crew/Initialize(mapload, obj/item/circuitboard/C)
+	. = ..()
+	AddComponent(/datum/component/usb_port, list(
+		/obj/item/circuit_component/medical_console_data,
+	))
+
+/obj/item/circuit_component/medical_console_data
+	display_name = "Crew Monitoring Data"
+	desc = "Outputs the medical statuses of people on the crew monitoring computer, where it can then be filtered with a Select Query component."
+	circuit_flags = CIRCUIT_FLAG_INPUT_SIGNAL|CIRCUIT_FLAG_OUTPUT_SIGNAL
+
+	/// The records retrieved
+	var/datum/port/output/records
+
+	var/obj/machinery/computer/crew/attached_console
+
+/obj/item/circuit_component/medical_console_data/populate_ports()
+	records = add_output_port("Crew Monitoring Data", PORT_TYPE_TABLE)
+
+/obj/item/circuit_component/medical_console_data/register_usb_parent(atom/movable/shell)
+	. = ..()
+	if(istype(shell, /obj/machinery/computer/crew))
+		attached_console = shell
+
+/obj/item/circuit_component/medical_console_data/unregister_usb_parent(atom/movable/shell)
+	attached_console = null
+	return ..()
+
+/obj/item/circuit_component/medical_console_data/get_ui_notices()
+	. = ..()
+	. += create_table_notices(list(
+		"name",
+		"job",
+		"life_status",
+		"suffocation",
+		"toxin",
+		"burn",
+		"brute",
+		"location",
+	))
+
+
+/obj/item/circuit_component/medical_console_data/input_received(datum/port/input/port)
+
+	if(!attached_console || !GLOB.crewmonitor)
+		return
+
+	var/list/new_table = list()
+	for(var/list/player_record as anything in GLOB.crewmonitor.update_data(attached_console.z))
+		var/list/entry = list()
+		entry["name"] = player_record["name"]
+		entry["job"] = player_record["assignment"]
+		entry["life_status"] = player_record["life_status"]
+		entry["suffocation"] = player_record["oxydam"]
+		entry["toxin"] = player_record["toxdam"]
+		entry["burn"] = player_record["burndam"]
+		entry["brute"] = player_record["brutedam"]
+		entry["location"] = player_record["area"]
+
+		new_table += list(entry)
+
+	records.set_output(new_table)
+
 /obj/machinery/computer/crew/syndie
 	icon_keyboard = "syndie_key"
 
-/obj/machinery/computer/crew/interact(mob/user)
+/obj/machinery/computer/crew/ui_interact(mob/user)
 	GLOB.crewmonitor.show(user,src)
 
 GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
@@ -34,11 +97,18 @@ GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
 		// Note that jobs divisible by 10 are considered heads of staff, and bolded
 		// 00: Captain
 		"Captain" = 00,
+		"Blueshield" = 01, //SKRYAT EDIT ADDITION
 		// 10-19: Security
 		"Head of Security" = 10,
 		"Warden" = 11,
 		"Security Officer" = 12,
-		"Detective" = 13,
+		"Security Officer (Medical)" = 13,
+		"Security Officer (Engineering)" = 14,
+		"Security Officer (Science)" = 15,
+		"Security Officer (Cargo)" = 16,
+		"Detective" = 17,
+		"Security Medic" = 18, //SKYRAT EDIT ADDITION - SEC_HAUL
+		"Security Sergeant" = 19, //SKYRAT EDIT ADDITION - SEC_HAUL
 		// 20-29: Medbay
 		"Chief Medical Officer" = 20,
 		"Chemist" = 21,
@@ -50,6 +120,7 @@ GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
 		"Scientist" = 31,
 		"Roboticist" = 32,
 		"Geneticist" = 33,
+		"Vanguard Operative" = 34, //SKYRAT EDIT ADDITION
 		// 40-49: Engineering
 		"Chief Engineer" = 40,
 		"Station Engineer" = 41,
@@ -92,11 +163,11 @@ GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
 		ui.open()
 
 /datum/crewmonitor/proc/show(mob/M, source)
-	ui_sources[M] = source
+	ui_sources[WEAKREF(M)] = source
 	ui_interact(M)
 
 /datum/crewmonitor/ui_host(mob/user)
-	return ui_sources[user]
+	return ui_sources[WEAKREF(user)]
 
 /datum/crewmonitor/ui_data(mob/user)
 	var/z = user.z
@@ -113,60 +184,78 @@ GLOBAL_DATUM_INIT(crewmonitor, /datum/crewmonitor, new)
 		return data_by_z["[z]"]
 
 	var/list/results = list()
-	for(var/tracked_mob in GLOB.suit_sensors_list | GLOB.nanite_sensors_list)
-		var/mob/living/carbon/human/H = tracked_mob
+	for(var/tracked_mob in GLOB.suit_sensors_list)
+		if(!tracked_mob)
+			stack_trace("Null entry in suit sensors list.")
+			continue
+
+		var/mob/living/tracked_living_mob = tracked_mob
 
 		// Check if z-level is correct
-		var/turf/pos = get_turf(H)
-		if (pos.z != z)
+		var/turf/pos = get_turf(tracked_living_mob)
+
+		// Is our target in nullspace for some reason?
+		if(!pos)
+			stack_trace("Tracked mob has no loc and is likely in nullspace: [tracked_living_mob] ([tracked_living_mob.type])")
 			continue
 
-		// Determine if this person is using nanites for sensors,
-		// in which case the sensors are always set to full detail
-		var/using_nanites = (H in GLOB.nanite_sensors_list)
-
-		// Check for a uniform if not using nanites
-		var/obj/item/clothing/under/uniform = H.w_uniform
-		if (!using_nanites && !uniform)
+		// Machinery and the target should be on the same level or different levels of the same station
+		if(pos.z != z && (!is_station_level(pos.z) || !is_station_level(z)))
 			continue
 
-		// Check that sensors are present and active
-		if (!using_nanites && (!uniform.has_sensor || !uniform.sensor_mode))
+		var/mob/living/carbon/human/tracked_human = tracked_living_mob
+
+		// Check their humanity.
+		if(!ishuman(tracked_human))
+			stack_trace("Non-human mob is in suit_sensors_list: [tracked_living_mob] ([tracked_living_mob.type])")
 			continue
+
+		// Check they have a uniform
+		var/obj/item/clothing/under/uniform = tracked_human.w_uniform
+		if (!istype(uniform))
+			stack_trace("Human without a suit sensors compatible uniform is in suit_sensors_list: [tracked_human] ([tracked_human.type]) ([uniform?.type])")
+			continue
+
+		// Check if their uniform is in a compatible mode.
+		if((uniform.has_sensor <= NO_SENSORS) || !uniform.sensor_mode)
+			stack_trace("Human without active suit sensors is in suit_sensors_list: [tracked_human] ([tracked_human.type]) ([uniform.type])")
+			continue
+
+		var/sensor_mode = uniform.sensor_mode
 
 		// The entry for this human
 		var/list/entry = list(
-			"ref" = REF(H),
+			"ref" = REF(tracked_living_mob),
 			"name" = "Unknown",
 			"ijob" = UNKNOWN_JOB_ID
 		)
 
 		// ID and id-related data
-		var/obj/item/card/id/id_card = H.get_idcard(hand_first = FALSE)
+		var/obj/item/card/id/id_card = tracked_living_mob.get_idcard(hand_first = FALSE)
 		if (id_card)
 			entry["name"] = id_card.registered_name
 			entry["assignment"] = id_card.assignment
-			entry["ijob"] = jobs[id_card.assignment]
+			entry["ijob"] = jobs[id_card.assignment] //SKYRAT EDIT - ALTERNATE JOB TITLES
 
 		// Binary living/dead status
-		if (using_nanites || uniform.sensor_mode >= SENSOR_LIVING)
-			entry["life_status"] = !H.stat
+		if (sensor_mode >= SENSOR_LIVING)
+			entry["life_status"] = !tracked_living_mob.stat
 
 		// Damage
-		if (using_nanites || uniform.sensor_mode >= SENSOR_VITALS)
+		if (sensor_mode >= SENSOR_VITALS)
 			entry += list(
-				"oxydam" = round(H.getOxyLoss(), 1),
-				"toxdam" = round(H.getToxLoss(), 1),
-				"burndam" = round(H.getFireLoss(), 1),
-				"brutedam" = round(H.getBruteLoss(), 1)
+				"oxydam" = round(tracked_living_mob.getOxyLoss(), 1),
+				"toxdam" = round(tracked_living_mob.getToxLoss(), 1),
+				"burndam" = round(tracked_living_mob.getFireLoss(), 1),
+				"brutedam" = round(tracked_living_mob.getBruteLoss(), 1)
 			)
 
 		// Location
-		if (pos && (using_nanites || uniform.sensor_mode >= SENSOR_COORDS))
-			entry["area"] = get_area_name(H, format_text = TRUE)
+		if (sensor_mode >= SENSOR_COORDS)
+			entry["area"] = get_area_name(tracked_living_mob, format_text = TRUE)
 
 		// Trackability
-		entry["can_track"] = H.can_track()
+		entry["can_track"] = tracked_living_mob.can_track()
 
 		results[++results.len] = entry
 

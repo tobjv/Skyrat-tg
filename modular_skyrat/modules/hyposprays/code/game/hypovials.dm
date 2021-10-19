@@ -1,13 +1,15 @@
-/obj/item/reagent_containers/glass/bottle/vial
+/obj/item/reagent_containers/glass/vial
 	name = "broken hypovial"
-	desc = "A hypovial compatible with most hyposprays."
+	desc = "You probably shouldn't be seeing this. Shout at a coder."
 	icon = 'modular_skyrat/modules/hyposprays/icons/vials.dmi'
 	icon_state = "hypovial"
 	spillable = FALSE
 	volume = 10
 	possible_transfer_amounts = list(1,2,5,10)
+	fill_icon_thresholds = list(10, 25, 50, 75, 100)
+	var/chem_color //Used for hypospray overlay
 
-/obj/item/reagent_containers/glass/bottle/vial/update_overlays()
+/obj/item/reagent_containers/glass/vial/update_overlays()
     . = ..()
     if(!fill_icon_thresholds)
         return
@@ -28,81 +30,44 @@
         var/mutable_appearance/filling = mutable_appearance('modular_skyrat/modules/hyposprays/icons/hypospray_fillings.dmi', "[fill_name][fill_overlay]")
 
         filling.color = mix_color_from_reagents(reagents.reagent_list)
+        chem_color = filling.color
         . += filling
 
-/obj/item/reagent_containers/glass/bottle/vial/Initialize()
+/obj/item/reagent_containers/glass/vial/Initialize()
 	. = ..()
 	update_icon()
 
-/obj/item/reagent_containers/glass/bottle/vial/on_reagent_change()
+/obj/item/reagent_containers/glass/vial/on_reagent_change()
 	update_icon()
 
-/obj/item/reagent_containers/glass/bottle/vial/small
+//Fit in all hypos
+/obj/item/reagent_containers/glass/vial/small
 	name = "hypovial"
+	desc = "A small, 60u capacity vial compatible with most hyposprays."
 	volume = 60
-	possible_transfer_amounts = list(1,2,5,10,20)
+	possible_transfer_amounts = list(1,2,5,10,20,30,40,50,60)
 
-/obj/item/reagent_containers/glass/bottle/vial/large
+//Fit in CMO hypo only
+/obj/item/reagent_containers/glass/vial/large
+	name = "large hypovial"
+	icon_state = "hypoviallarge"
+	desc = "A large, 120u capacity vial that fits only in the most deluxe hyposprays."
 	volume = 120
 	possible_transfer_amounts = list(1,2,5,10,20,30,40,50,100,120)
 
-/obj/item/reagent_containers/glass/bottle/vial/small/bicaridine
-	name = "red hypovial (bicaridine)"
-	icon_state = "hypovial-b"
-	list_reagents = list(/datum/reagent/medicine/bicaridine = 30)
-
-/obj/item/reagent_containers/glass/bottle/vial/small/antitoxin
-	name = "green hypovial (Anti-Tox)"
-	icon_state = "hypovial-a"
-	list_reagents = list(/datum/reagent/medicine/antitoxin = 30)
-
-/obj/item/reagent_containers/glass/bottle/vial/small/kelotane
-	name = "orange hypovial (kelotane)"
-	icon_state = "hypovial-k"
-	list_reagents = list(/datum/reagent/medicine/kelotane = 30)
-
-/obj/item/reagent_containers/glass/bottle/vial/small/dexalin
-	name = "blue hypovial (dexalin)"
-	icon_state = "hypovial-d"
-	list_reagents = list(/datum/reagent/medicine/dexalin = 30)
-
-/obj/item/reagent_containers/glass/bottle/vial/small/tricord
-	name = "hypovial (tricordrazine)"
-	icon_state = "hypovial"
-	list_reagents = list(/datum/reagent/medicine/tricordrazine = 30)
-
-/obj/item/reagent_containers/glass/bottle/vial/large/cmo
+//Hypos that are in the CMO's kit round start
+/obj/item/reagent_containers/glass/vial/large/deluxe
 	name = "deluxe hypovial"
 	list_reagents = list(/datum/reagent/medicine/omnizine = 20, /datum/reagent/medicine/leporazine = 20, /datum/reagent/medicine/atropine = 20)
 
-/obj/item/reagent_containers/glass/bottle/vial/large/bicaridine
-	name = "large red hypovial (bicaridine)"
-	list_reagents = list(/datum/reagent/medicine/bicaridine = 60)
-
-/obj/item/reagent_containers/glass/bottle/vial/large/antitoxin
-	name = "large green hypovial (anti-tox)"
-	list_reagents = list(/datum/reagent/medicine/antitoxin = 60)
-
-/obj/item/reagent_containers/glass/bottle/vial/large/kelotane
-	name = "large orange hypovial (kelotane)"
-	list_reagents = list(/datum/reagent/medicine/kelotane = 60)
-
-/obj/item/reagent_containers/glass/bottle/vial/large/dexalin
-	name = "large blue hypovial (dexalin)"
-	list_reagents = list(/datum/reagent/medicine/dexalin = 60)
-
-/obj/item/reagent_containers/glass/bottle/vial/large/charcoal
-	name = "large black hypovial (multiver)"
-	list_reagents = list(/datum/reagent/medicine/c2/multiver = 60)
-
-/obj/item/reagent_containers/glass/bottle/vial/large/tricord
-	name = "large hypovial (tricord)"
-	list_reagents = list(/datum/reagent/medicine/tricordrazine = 60)
-
-/obj/item/reagent_containers/glass/bottle/vial/large/salglu
+/obj/item/reagent_containers/glass/vial/large/salglu
 	name = "large green hypovial (salglu)"
 	list_reagents = list(/datum/reagent/medicine/salglu_solution = 60)
 
-/obj/item/reagent_containers/glass/bottle/vial/large/synthflesh
+/obj/item/reagent_containers/glass/vial/large/synthflesh
 	name = "large orange hypovial (synthflesh)"
 	list_reagents = list(/datum/reagent/medicine/c2/synthflesh = 60)
+
+/obj/item/reagent_containers/glass/vial/large/multiver
+	name = "large black hypovial (multiver)"
+	list_reagents = list(/datum/reagent/medicine/c2/multiver = 60)

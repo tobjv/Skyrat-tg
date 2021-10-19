@@ -2,6 +2,11 @@
 //Please make sure you double check a sprite before adding an entry into this as some clothing items do require alternate sprites.area
 
 //HEAD>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+/obj/item/clothing/head/festive
+	mutant_variants = NONE
+
+/obj/item/clothing/head/helmet/gladiator
+    mutant_variants = NONE
 /obj/item/clothing/head/chefhat
     mutant_variants = NONE
 
@@ -137,9 +142,28 @@
 /obj/item/clothing/head/santa
 	mutant_variants = NONE
 
+/obj/item/clothing/head/helmet/durathread
+	mutant_variants = NONE
+
+/obj/item/clothing/head/hooded/cloakhood/drake
+	mutant_variants = NONE
+
+/obj/item/clothing/head/hooded/cloakhood/goliath
+	mutant_variants = NONE
+
+/obj/item/clothing/head/nun_hood
+	mutant_variants = NONE
+
+/obj/item/clothing/head/helmet/knight/greyscale
+	mutant_variants = NONE
+
+/obj/item/clothing/head/mob_holder
+	mutant_variants = NONE
 //EARS>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 //EYES>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+/obj/item/clothing/glasses/changeling
+	mutant_variants = NONE
 
 //MASK>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 /obj/item/clothing/mask/gas/hunter
@@ -158,6 +182,9 @@
 
 //UNDER>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+/obj/item/clothing/under/costume/gladiator/ash_walker
+	mutant_variants = NONE
+
 /obj/item/clothing/under/misc/gear_harness
 	mutant_variants = NONE
 
@@ -173,9 +200,6 @@
 /obj/item/clothing/under/misc/bouncer
 	mutant_variants = NONE
 
-/obj/item/clothing/under/rank/engineering/engineer/hazard
-	mutant_variants = NONE
-
 /obj/item/clothing/under/rank/security/officer/spacepol
 	mutant_variants = NONE
 
@@ -184,9 +208,11 @@
 
 /obj/item/clothing/under/syndicate/skirt
 	mutant_variants = NONE
+	body_parts_covered = CHEST|GROIN|ARMS
 
 /obj/item/clothing/under/syndicate/tacticool/skirt
 	mutant_variants = NONE
+	body_parts_covered = CHEST|GROIN|ARMS
 
 /obj/item/clothing/under/rank/captain/suit/skirt
 	mutant_variants = NONE
@@ -206,10 +232,10 @@
 /obj/item/clothing/under/color/jumpskirt
 	mutant_variants = NONE
 
-/obj/item/clothing/under/dress/skirt
+/obj/item/clothing/under/suit/black/skirt
 	mutant_variants = NONE
 
-/obj/item/clothing/under/suit/black/skirt
+/obj/item/clothing/under/rank/captain/pilot/skirt
 	mutant_variants = NONE
 
 /obj/item/clothing/suit/toggle/labcoat/roboticist
@@ -274,5 +300,149 @@
 /obj/item/clothing/suit/hooded/chaplain_hoodie
 	mutant_variants = NONE
 
+/obj/item/clothing/suit/curator
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/hooded/chaplainsuit
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/chaplainsuit
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/armor/riot/knight/greyscale
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/toggle/armor/vest/centcom_formal
+	mutant_variants = NONE
 
 //FEET>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+/obj/item/clothing/under/changeling
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/changeling
+	mutant_variants = NONE
+
+/obj/item/clothing/head/changeling
+	mutant_variants = NONE
+
+/obj/item/clothing/shoes/changeling
+	mutant_variants = NONE
+
+/obj/item/clothing/gloves/changeling
+	mutant_variants = NONE
+
+/obj/item/clothing/mask/changeling
+	mutant_variants = NONE
+
+/obj/item/changeling
+	mutant_variants = NONE
+
+/obj/item/storage/backpack/henchmen
+	mutant_variants = NONE
+
+/obj/item/clothing/head/irs
+	mutant_variants = NONE
+
+/obj/item/clothing/head/pg
+	mutant_variants = NONE
+
+/obj/item/clothing/head/tmc
+	mutant_variants = NONE
+
+/obj/item/clothing/head/deckers
+	mutant_variants = NONE
+
+/obj/item/clothing/head/morningstar
+	mutant_variants = NONE
+
+/obj/item/clothing/head/saints
+	mutant_variants = NONE
+
+/obj/item/clothing/head/allies
+	mutant_variants = NONE
+
+/obj/item/clothing/head/yuri
+	mutant_variants = NONE
+
+/obj/item/clothing/head/sybil_slickers
+	mutant_variants = NONE
+
+/obj/item/clothing/head/basil_boys
+	mutant_variants = NONE
+
+/obj/item/clothing/head/helmet/alt
+	mutant_variants = NONE
+
+/obj/item/clothing/head/xenos
+	mutant_variants = NONE
+
+/obj/item/clothing/head/cone
+	mutant_variants = NONE
+
+/obj/item/clothing/mask/gas/driscoll
+	mutant_variants = NONE
+
+/obj/item/clothing/head/helmet/space/chronos
+	mutant_variants = NONE
+
+/obj/item/clothing/head/helmet/space/hardsuit/ert/paranormal
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/yakuza
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/dutch
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/driscoll
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/irs
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/osi
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/tmc
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/pg
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/deckers
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/morningstar
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/saints
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/phantom
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/allies
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/soviet
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/yuri
+	mutant_variants = NONE
+
+/obj/item/clothing/suit/security/officer
+	mutant_variants = NONE
+
+/obj/item/clothing/under/costume/swagoutfit
+	mutant_variants = NONE
+
+/obj/item/clothing/under/suit/henchmen
+	mutant_variants = NONE
+
+/obj/item/clothing/under/rank/cargo/tech
+	mutant_variants = NONE
+
+/obj/item/clothing/under/rank/prisoner/skirt
+	mutant_variants = NONE

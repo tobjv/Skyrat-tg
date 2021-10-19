@@ -48,7 +48,7 @@
 	* target - the atom that just moved onto the `source` turf.
 	* oldLoc - the old location that `target` was at before moving onto `source`.
 */
-/obj/machinery/mineral/proc/pickup_item(datum/source, atom/movable/target, atom/oldLoc)
+/obj/machinery/mineral/proc/pickup_item(datum/source, atom/movable/target, atom/old_loc, list/atom/old_locs)
 	SIGNAL_HANDLER
 
 	return
@@ -68,7 +68,7 @@
 	var/obj/machinery/mineral/processing_unit/machine = null
 	var/machinedir = EAST
 
-/obj/machinery/mineral/processing_unit_console/Initialize()
+/obj/machinery/mineral/processing_unit_console/Initialize(mapload)
 	. = ..()
 	machine = locate(/obj/machinery/mineral/processing_unit, get_step(src, machinedir))
 	if (machine)
@@ -130,7 +130,7 @@
 	var/selected_alloy = null
 	var/datum/techweb/stored_research
 
-/obj/machinery/mineral/processing_unit/Initialize()
+/obj/machinery/mineral/processing_unit/Initialize(mapload)
 	. = ..()
 	proximity_monitor = new(src, 1)
 	var/list/allowed_materials = list(/datum/material/iron,
@@ -144,9 +144,9 @@
 									/datum/material/titanium,
 									/datum/material/bluespace
 									)
-	AddComponent(/datum/component/material_container, allowed_materials, INFINITY, MATCONTAINER_EXAMINE|BREAKDOWN_FLAGS_ORE_PROCESSOR, /obj/item/stack)
+	AddComponent(/datum/component/material_container, allowed_materials, INFINITY, MATCONTAINER_EXAMINE|BREAKDOWN_FLAGS_ORE_PROCESSOR, allowed_items=/obj/item/stack)
 	stored_research = new /datum/techweb/specialized/autounlocking/smelter
-	selected_material = SSmaterials.GetMaterialRef(/datum/material/iron)
+	selected_material = GET_MATERIAL_REF(/datum/material/iron)
 
 /obj/machinery/mineral/processing_unit/Destroy()
 	CONSOLE = null
@@ -200,7 +200,7 @@
 
 	return dat
 
-/obj/machinery/mineral/processing_unit/pickup_item(datum/source, atom/movable/target, atom/oldLoc)
+/obj/machinery/mineral/processing_unit/pickup_item(datum/source, atom/movable/target, direction)
 	if(QDELETED(target))
 		return
 	if(istype(target, /obj/item/stack/ore))

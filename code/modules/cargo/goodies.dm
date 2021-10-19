@@ -3,7 +3,8 @@
 	access = NONE
 	group = "Goodies"
 	goody = TRUE
-
+//SKYRAT EDIT REMOVAL BEGIN
+/*
 /datum/supply_pack/goody/dumdum38
 	name = ".38 DumDum Speedloader"
 	desc = "Contains one speedloader of .38 DumDum ammunition, good for embedding in soft targets."
@@ -53,11 +54,11 @@
 	contains = list(/obj/item/gun/energy/e_gun)
 
 /datum/supply_pack/goody/hell_single
-	name = "Hellgun Single-Pack"
-	desc = "Contains one hellgun, an old pattern of laser gun infamous for its ability to horribly disfigure targets with burns. Technically violates the Space Geneva Convention when used on humanoids."
-	cost = PAYCHECK_HARD * 18
+	name = "Hellgun Kit Single-Pack"
+	desc = "Contains one hellgun degradation kit, an old pattern of laser gun infamous for its ability to horribly disfigure targets with burns. Technically violates the Space Geneva Convention when used on humanoids."
+	cost = PAYCHECK_MEDIUM * 2
 	access_view = ACCESS_ARMORY
-	contains = list(/obj/item/gun/energy/laser/hellgun)
+	contains = list(/obj/item/weaponcrafting/gunkit/hellgun)
 
 /datum/supply_pack/goody/wt550_single
 	name = "WT-550 Auto Rifle Single-Pack"
@@ -73,9 +74,8 @@
 	access_view = ACCESS_ARMORY
 	contains = list(/obj/item/ammo_box/magazine/wt550m9)
 
-/datum/supply_pack/goody/wt550ammoap //SKYRAT EDIT ADDITION
-
-/datum/supply_pack/goody/wt550ammoic //SKYRAT EDIT ADDITION
+*/
+//SKYRAT EDIT REMOVAL END
 
 /datum/supply_pack/goody/techbox //SKYRAT EDIT ADDITION
 
@@ -138,12 +138,23 @@
 	desc = "The most important thing you could possibly spend your hard-earned money on."
 	cost = PAYCHECK_EASY * 4
 	contains = list(/obj/item/toy/plush/beeplushie)
-
+/* SKYRAT EDIT REMOVAL
+/datum/supply_pack/goody/dyespray
+	name = "Hair Dye Spray"
+	desc = "A cool spray to dye your hair with awesome colors!"
+	cost = PAYCHECK_EASY * 2
+	contains = list(/obj/item/dyespray)
+*/
 /datum/supply_pack/goody/beach_ball
 	name = "Beach Ball"
-	desc = "The simple beach ball is one of Nanotrasen's most popular products. 'Why do we make beach balls? Because we can! (TM)' - Nanotrasen"
+	// uses desc from item
 	cost = PAYCHECK_MEDIUM
-	contains = list(/obj/item/toy/beach_ball)
+	contains = list(/obj/item/toy/beach_ball/branded)
+
+/datum/supply_pack/goody/beach_ball/New()
+	..()
+	var/obj/item/toy/beach_ball/branded/beachball_type = /obj/item/toy/beach_ball/branded
+	desc = initial(beachball_type.desc)
 
 /datum/supply_pack/goody/medipen_twopak
 	name = "Medipen Two-Pak"

@@ -59,6 +59,11 @@
 /datum/mutation/human/proc/on_acquiring(mob/living/carbon/human/H)
 	if(!H || !istype(H) || H.stat == DEAD || (src in H.dna.mutations))
 		return TRUE
+	//Skyrat Edit Start: Cortical Borer
+	if(H.has_borer())
+		to_chat(H, span_warning("Something inside holds dearly to your humanity!"))
+		return TRUE
+	//Skyrat Edit Stop: Cortical Borer
 	if(species_allowed && !species_allowed.Find(H.dna.species.id))
 		return TRUE
 	if(health_req && H.health < health_req)
@@ -69,7 +74,7 @@
 		var/datum/mutation/human/mewtayshun = M
 		if(!(mewtayshun.type in conflicts) && !(type in mewtayshun.conflicts))
 			continue
-		to_chat(H, "<span class='warning'>You feel your genes resisting something.</span>")
+		to_chat(H, span_warning("You feel your genes resisting something."))
 		return TRUE
 	owner = H
 	dna = H.dna
@@ -91,7 +96,7 @@
 /datum/mutation/human/proc/get_visual_indicator()
 	return
 
-/datum/mutation/human/proc/on_life()
+/datum/mutation/human/proc/on_life(delta_time, times_fired)
 	return
 
 /datum/mutation/human/proc/on_losing(mob/living/carbon/human/owner)

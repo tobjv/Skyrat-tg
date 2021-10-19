@@ -34,8 +34,27 @@ map icebox
 	votable
 endmap
 
+map tramstation
+	minplayers 35
+
+map waterkilostation
+	votable
+endmap
+
 map runtimestation
 endmap
 
 map multiz_debug
+endmap
+
+##SKYRAT MAPS##
+
+map nssjourney
+	minplayers 25
+	votable
+endmap
+
+map blueshift
+	minplayers 50
+	votable
 endmap

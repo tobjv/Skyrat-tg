@@ -10,6 +10,10 @@ if grep -El '^\".+\" = \(.+\)' _maps/**/*.dmm;	then
     echo "ERROR: Non-TGM formatted map detected. Please convert it using Map Merger!"
     st=1
 fi;
+if grep -P 'Merge conflict marker' _maps/**/*.dmm; then
+    echo "ERROR: Merge conflict markers detected in map, please resolve all merge failures!"
+    st=1
+fi;
 if grep -P '^\ttag = \"icon' _maps/**/*.dmm;	then
     echo "ERROR: tag vars from icon state generation detected in maps, please remove them."
     st=1
@@ -90,6 +94,10 @@ if grep -ni 'nanotransen' _maps/**/*.dmm; then
 fi;
 if ls _maps/*.json | grep -P "[A-Z]"; then
     echo "Uppercase in a map json detected, these must be all lowercase."
+    st=1
+fi;
+if grep -i '/obj/effect/mapping_helpers/custom_icon' _maps/**/*.dmm; then
+    echo "Custom icon helper found. Please include dmis as standard assets instead for built-in maps."
     st=1
 fi;
 for json in _maps/*.json

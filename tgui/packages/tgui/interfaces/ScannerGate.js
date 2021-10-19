@@ -1,6 +1,5 @@
-import { Fragment } from 'inferno';
 import { useBackend } from '../backend';
-import { Box, Button, LabeledList, NumberInput, Section } from '../components';
+import { Box, Button, LabeledList, Section } from '../components';
 import { InterfaceLockNoticeBox } from './common/InterfaceLockNoticeBox';
 import { Window } from '../layouts';
 
@@ -55,6 +54,67 @@ const TARGET_SPECIES_LIST = [
     name: 'Zombie',
     value: 'zombie',
   },
+  //  SKYRAT EDIT START - MORE SCANNER GATE OPTIONS
+  {
+    name: 'Anthromorph',
+    value: 'mammal',
+  },
+  {
+    name: 'Vox',
+    value: 'vox',
+  },
+  {
+    name: 'Aquatic',
+    value: 'aquatic',
+  },
+  {
+    name: 'Anthromorphic Insect',
+    value: 'insect',
+  },
+  {
+    name: 'Xenomorph',
+    value: 'xeno',
+  },
+  {
+    name: 'Unathi',
+    value: 'unathi',
+  },
+  {
+    name: 'Tajaran',
+    value: 'tajaran',
+  },
+  {
+    name: 'Vulpkanin',
+    value: 'vulpkanin',
+  },
+  {
+    name: 'I.P.C.',
+    value: 'ipc',
+  },
+  {
+    name: 'Synthetic Lizardperson',
+    value: 'synthliz',
+  },
+  {
+    name: 'Synthetic Anthromorph',
+    value: 'synthmammal',
+  },
+  {
+    name: 'Synthetic Human',
+    value: 'synthhuman',
+  },
+];
+
+const TARGET_GENDER_LIST = [
+  {
+    name: 'Male',
+    value: 'male',
+  },
+  {
+    name: 'Female',
+    value: 'female',
+  },
+  //  SKYRAT EDIT END - MORE SCANNER GATE OPTIONS
 ];
 
 const TARGET_NUTRITION_LIST = [
@@ -73,8 +133,7 @@ export const ScannerGate = (props, context) => {
   return (
     <Window
       width={400}
-      height={300}
-      resizable>
+      height={300}>
       <Window.Content scrollable>
         <InterfaceLockNoticeBox
           onLockedStatusChange={() => act('toggle_lock')} />
@@ -115,10 +174,12 @@ const SCANNER_GATE_ROUTES = {
     title: 'Scanner Mode: Nutrition',
     component: () => ScannerGateNutrition,
   },
-  Nanites: {
-    title: 'Scanner Mode: Nanites',
-    component: () => ScannerGateNanites,
+  //  SKYRAT EDIT START - MORE SCANNER GATE OPTIONS
+  Gender: {
+    title: 'Scanner Mode: Gender',
+    component: () => ScannerGateGender,
   },
+  //  SKYRAT EDIT END - MORE SCANNER GATE OPTIONS
 };
 
 const ScannerGateControl = (props, context) => {
@@ -144,7 +205,7 @@ const ScannerGateControl = (props, context) => {
 const ScannerGateOff = (props, context) => {
   const { act } = useBackend(context);
   return (
-    <Fragment>
+    <>
       <Box mb={2}>
         Select a scanning mode below.
       </Box>
@@ -164,14 +225,15 @@ const ScannerGateOff = (props, context) => {
         <Button
           content="Species"
           onClick={() => act('set_mode', { new_mode: 'Species' })} />
+        <Button //  SKYRAT EDIT START - MORE SCANNER GATE OPTIONS
+          content="Gender"
+          onClick={() => act('set_mode', { new_mode: 'Gender' })}//  SKYRAT EDIT END - MORE SCANNER GATE OPTIONS
+        />
         <Button
           content="Nutrition"
           onClick={() => act('set_mode', { new_mode: 'Nutrition' })} />
-        <Button
-          content="Nanites"
-          onClick={() => act('set_mode', { new_mode: 'Nanites' })} />
       </Box>
-    </Fragment>
+    </>
   );
 };
 
@@ -179,13 +241,13 @@ const ScannerGateWanted = (props, context) => {
   const { data } = useBackend(context);
   const { reverse } = data;
   return (
-    <Fragment>
+    <>
       <Box mb={2}>
         Trigger if the person scanned {reverse ? 'does not have' : 'has'}
         {' '}any warrants for their arrest.
       </Box>
       <ScannerGateMode />
-    </Fragment>
+    </>
   );
 };
 
@@ -193,13 +255,13 @@ const ScannerGateGuns = (props, context) => {
   const { data } = useBackend(context);
   const { reverse } = data;
   return (
-    <Fragment>
+    <>
       <Box mb={2}>
         Trigger if the person scanned {reverse ? 'does not have' : 'has'}
         {' '}any guns.
       </Box>
       <ScannerGateMode />
-    </Fragment>
+    </>
   );
 };
 
@@ -207,13 +269,13 @@ const ScannerGateMindshield = (props, context) => {
   const { data } = useBackend(context);
   const { reverse } = data;
   return (
-    <Fragment>
+    <>
       <Box mb={2}>
         Trigger if the person scanned {reverse ? 'does not have' : 'has'}
         {' '}a mindshield.
       </Box>
       <ScannerGateMode />
-    </Fragment>
+    </>
   );
 };
 
@@ -221,7 +283,7 @@ const ScannerGateDisease = (props, context) => {
   const { act, data } = useBackend(context);
   const { reverse, disease_threshold } = data;
   return (
-    <Fragment>
+    <>
       <Box mb={2}>
         Trigger if the person scanned {reverse ? 'does not have' : 'has'}
         {' '}a disease equal or worse than {disease_threshold}.
@@ -238,7 +300,7 @@ const ScannerGateDisease = (props, context) => {
         ))}
       </Box>
       <ScannerGateMode />
-    </Fragment>
+    </>
   );
 };
 
@@ -249,7 +311,7 @@ const ScannerGateSpecies = (props, context) => {
     return species.value === target_species;
   });
   return (
-    <Fragment>
+    <>
       <Box mb={2}>
         Trigger if the person scanned is {reverse ? 'not' : ''}
         {' '}of the {species.name} species.
@@ -269,7 +331,7 @@ const ScannerGateSpecies = (props, context) => {
         ))}
       </Box>
       <ScannerGateMode />
-    </Fragment>
+    </>
   );
 };
 
@@ -280,7 +342,7 @@ const ScannerGateNutrition = (props, context) => {
     return nutrition.value === target_nutrition;
   });
   return (
-    <Fragment>
+    <>
       <Box mb={2}>
         Trigger if the person scanned {reverse ? 'does not have' : 'has'}
         {' '}the {nutrition.name} nutrition level.
@@ -297,38 +359,39 @@ const ScannerGateNutrition = (props, context) => {
         ))}
       </Box>
       <ScannerGateMode />
-    </Fragment>
+    </>
   );
 };
 
-const ScannerGateNanites = (props, context) => {
+//  SKYRAT EDIT START - MORE SCANNER GATE OPTIONS
+const ScannerGateGender = (props, context) => {
   const { act, data } = useBackend(context);
-  const { reverse, nanite_cloud } = data;
+  const { reverse, target_gender } = data;
+  const gender = TARGET_GENDER_LIST.find(gender => {
+    return gender.value === target_gender;
+  });
   return (
-    <Fragment>
+    <>
       <Box mb={2}>
-        Trigger if the person scanned {reverse ? 'does not have' : 'has'}
-        {' '}nanite cloud {nanite_cloud}.
+        Trigger if the person scanned is {reverse ? 'not' : ''}
+        {' '}a {gender.name}.
       </Box>
       <Box mb={2}>
-        <LabeledList>
-          <LabeledList.Item label="Cloud ID">
-            <NumberInput
-              value={nanite_cloud}
-              width="65px"
-              minValue={1}
-              maxValue={100}
-              stepPixelSize={2}
-              onChange={(e, value) => act('set_nanite_cloud', {
-                new_cloud: value,
-              })} />
-          </LabeledList.Item>
-        </LabeledList>
+        {TARGET_GENDER_LIST.map(gender => (
+          <Button.Checkbox
+            key={gender.name}
+            checked={gender.value === target_gender}
+            content={gender.name}
+            onClick={() => act('set_target_gender', {
+              new_gender: gender.name,
+            })} />
+        ))}
       </Box>
       <ScannerGateMode />
-    </Fragment>
+    </>
   );
 };
+//  SKYRAT EDIT END - MORE SCANNER GATE OPTIONS
 
 const ScannerGateMode = (props, context) => {
   const { act, data } = useBackend(context);

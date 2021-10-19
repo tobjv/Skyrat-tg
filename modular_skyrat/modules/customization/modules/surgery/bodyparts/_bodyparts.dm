@@ -1,4 +1,4 @@
-/obj/item/bodypart/proc/get_limb_icon(dropped)
+/obj/item/bodypart/proc/get_limb_icon(dropped, draw_external_organs)
 	icon_state = "" //to erase the default sprite, we're building the visual aspects of the bodypart through overlays alone.
 
 	. = list()
@@ -26,6 +26,12 @@
 		else
 			limb.icon = 'icons/mob/augmentation/augments.dmi'
 			limb.icon_state = "[animal_origin]_[body_zone]"
+
+		if(blocks_emissive)
+			var/mutable_appearance/limb_em_block = mutable_appearance(limb.icon, limb.icon_state, plane = EMISSIVE_PLANE, appearance_flags = KEEP_APART)
+			limb_em_block.dir = image_dir
+			limb_em_block.color = GLOB.em_block_color
+			limb.overlays += limb_em_block
 		return
 
 	var/icon_gender = (body_gender == FEMALE) ? "f" : "m" //gender of the icon, if applicable
@@ -51,7 +57,6 @@
 		if(aux_zone)
 			aux = image(limb.icon, "[species_id]_[aux_zone]", -aux_layer, image_dir)
 			. += aux
-
 	else
 		limb.icon = icon
 		if(should_draw_gender)
@@ -61,52 +66,89 @@
 		if(aux_zone)
 			aux = image(limb.icon, "[aux_zone]", -aux_layer, image_dir)
 			. += aux
+		if(blocks_emissive)
+			var/mutable_appearance/limb_em_block = mutable_appearance(limb.icon, limb.icon_state, plane = EMISSIVE_PLANE, appearance_flags = KEEP_APART)
+			limb_em_block.dir = image_dir
+			limb_em_block.color = GLOB.em_block_color
+			limb.overlays += limb_em_block
 		return
 
-
+	var/draw_color
 	if(should_draw_greyscale)
-		var/draw_color = mutation_color || species_color || (skin_tone && skintone2hex(skin_tone))
+		draw_color = mutation_color || species_color || (skin_tone && skintone2hex(skin_tone))
 		if(draw_color)
-			limb.color = "#[draw_color]"
+			limb.color = draw_color
 			if(aux_zone)
-				aux.color = "#[draw_color]"
+				aux.color = draw_color
 
+	if (!owner || is_pseudopart || !ishuman(owner))
+		return
+
+	var/mob/living/carbon/human/H = owner
+	//set specific alpha before setting the markings alpha
+	if (alpha != 255)
+		for (var/ov in .)
+			var/image/overlay = ov
+			overlay.alpha = alpha
 	//Markings!
-	if(!is_pseudopart && owner)
-		var/mob/living/carbon/human/H = owner
-		var/override_color
-		if(HAS_TRAIT(H, TRAIT_HUSK))
-			override_color = "888"
-		if(istype(H))
-			for(var/key in H.dna.species.body_markings[body_zone])
-				var/datum/body_marking/BM = GLOB.body_markings[key]
+	var/override_color
+	if(HAS_TRAIT(H, TRAIT_HUSK))
+		override_color = "#888888"
 
-				var/render_limb_string = body_zone
-				switch(body_zone)
-					if(BODY_ZONE_R_LEG, BODY_ZONE_L_LEG)
-						if(use_digitigrade)
-							render_limb_string = "digitigrade_[use_digitigrade]_[render_limb_string]"
-					if(BODY_ZONE_CHEST)
-						if(BM.gendered)
-							var/gendaar = (H.body_type == FEMALE) ? "f" : "m"
-							render_limb_string = "[render_limb_string]_[gendaar]"
+	for(var/key in H.dna.species.body_markings[body_zone])
+		var/datum/body_marking/BM = GLOB.body_markings[key]
 
-				var/mutable_appearance/accessory_overlay = mutable_appearance(BM.icon, "[BM.icon_state]_[render_limb_string]", -BODYPARTS_LAYER)
-				if(override_color)
-					accessory_overlay.color = "#[override_color]"
-				else
-					accessory_overlay.color = "#[H.dna.species.body_markings[body_zone][key]]"
-				. += accessory_overlay
+		var/render_limb_string = body_zone
+		switch(body_zone)
+			if(BODY_ZONE_R_LEG, BODY_ZONE_L_LEG)
+				if(use_digitigrade)
+					render_limb_string = "digitigrade_[use_digitigrade]_[render_limb_string]"
+			if(BODY_ZONE_CHEST)
+				if(BM.gendered)
+					var/gendaar = (H.body_type == FEMALE) ? "f" : "m"
+					render_limb_string = "[render_limb_string]_[gendaar]"
 
-			if(aux_zone)
-				for(var/key in H.dna.species.body_markings[aux_zone])
-					var/datum/body_marking/BM = GLOB.body_markings[key]
+		var/mutable_appearance/accessory_overlay = mutable_appearance(BM.icon, "[BM.icon_state]_[render_limb_string]", -BODYPARTS_LAYER)
+		if(override_color)
+			accessory_overlay.color = override_color
+		else
+			accessory_overlay.color = H.dna.species.body_markings[body_zone][key]
+		accessory_overlay.alpha = H.dna.species.markings_alpha
+		. += accessory_overlay
 
-					var/render_limb_string = aux_zone
+	if(aux_zone)
+		for(var/key in H.dna.species.body_markings[aux_zone])
+			var/datum/body_marking/BM = GLOB.body_markings[key]
 
-					var/mutable_appearance/accessory_overlay = mutable_appearance(BM.icon, "[BM.icon_state]_[render_limb_string]", -aux_layer)
-					if(override_color)
-						accessory_overlay.color = "#[override_color]"
-					else
-						accessory_overlay.color = "#[H.dna.species.body_markings[aux_zone][key]]"
-					. += accessory_overlay
+			var/render_limb_string = aux_zone
+
+			var/mutable_appearance/accessory_overlay = mutable_appearance(BM.icon, "[BM.icon_state]_[render_limb_string]", -aux_layer)
+			if(override_color)
+				accessory_overlay.color = override_color
+			else
+				accessory_overlay.color = H.dna.species.body_markings[aux_zone][key]
+			accessory_overlay.alpha = H.dna.species.markings_alpha
+			. += accessory_overlay
+
+	if(blocks_emissive)
+		var/mutable_appearance/limb_em_block = mutable_appearance(limb.icon, limb.icon_state, plane = EMISSIVE_PLANE, appearance_flags = KEEP_APART)
+		limb_em_block.dir = image_dir
+		limb_em_block.color = GLOB.em_block_color
+		limb.overlays += limb_em_block
+
+		if(aux_zone)
+			var/mutable_appearance/aux_em_block = mutable_appearance(aux.icon, aux.icon_state, plane = EMISSIVE_PLANE, appearance_flags = KEEP_APART)
+			aux_em_block.dir = image_dir
+			aux_em_block.color = GLOB.em_block_color
+
+
+	if(!draw_external_organs)
+		return
+	//Draw external organs like horns and frills
+	for(var/obj/item/organ/external/external_organ in external_organs)
+		if(!dropped && !external_organ.can_draw_on_bodypart(owner))
+			continue
+		//Some externals have multiple layers for background, foreground and between
+		for(var/external_layer in external_organ.all_layers)
+			if(external_organ.layers & external_layer)
+				external_organ.get_overlays(., image_dir, external_organ.bitflag_to_layer(external_layer), icon_gender, draw_color)

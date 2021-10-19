@@ -2,11 +2,12 @@
 	key = "tail"
 	generic = "Tail"
 	organ_type = /obj/item/organ/tail
-	icon = 'modular_skyrat/modules/customization/icons/mob/mutant_bodyparts.dmi'
+	icon = 'modular_skyrat/master_files/icons/mob/mutant_bodyparts.dmi'
 	special_render_case = TRUE
 	special_icon_case = TRUE
 	special_colorize = TRUE
 	relevent_layers = list(BODY_BEHIND_LAYER, BODY_FRONT_LAYER)
+	genetic = TRUE
 	/// A generalisation of the tail-type, e.g. lizard or feline, for hardsuit or other sprites
 	var/general_type
 
@@ -28,7 +29,7 @@
 	if(passed_state == "[general_type]_hardsuit") //Guarantees we're wearing a hardsuit, skip checks
 		var/obj/item/clothing/suit/space/hardsuit/HS = H.wear_suit
 		if(HS.hardsuit_tail_colors)
-			returned = 'modular_skyrat/modules/customization/icons/mob/sprite_accessory/tails_hardsuit.dmi'
+			returned = 'modular_skyrat/master_files/icons/mob/sprite_accessory/tails_hardsuit.dmi'
 	return returned
 
 /datum/sprite_accessory/tails/get_special_render_colour(mob/living/carbon/human/H, passed_state)
@@ -37,9 +38,9 @@
 		if(HS.hardsuit_tail_colors)
 			//Currently this way, when I have more time I'll write a hex -> matrix converter to pre-bake them instead
 			var/list/finished_list = list()
-			finished_list += ReadRGB("[HS.hardsuit_tail_colors[1]]0")
-			finished_list += ReadRGB("[HS.hardsuit_tail_colors[2]]0")
-			finished_list += ReadRGB("[HS.hardsuit_tail_colors[3]]0")
+			finished_list += ReadRGB(get_alpha_padded_color(HS.hardsuit_tail_colors[1]))
+			finished_list += ReadRGB(get_alpha_padded_color(HS.hardsuit_tail_colors[2]))
+			finished_list += ReadRGB(get_alpha_padded_color(HS.hardsuit_tail_colors[3]))
 			finished_list += list(0,0,0,255)
 			for(var/index in 1 to finished_list.len)
 				finished_list[index] /= 255
@@ -47,42 +48,49 @@
 	return null
 
 /datum/sprite_accessory/tails/lizard
-	recommended_species = list("lizard", "ashlizard", "mammal", "unathi")
+	recommended_species = list(SPECIES_LIZARD, SPECIES_LIZARD_ASH, SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL, SPECIES_UNATHI, SPECIES_LIZARD_SILVER)
 	organ_type = /obj/item/organ/tail/lizard
-	general_type = "lizard"
+	general_type = SPECIES_LIZARD
 
 /datum/sprite_accessory/tails/human
-	recommended_species = list("human", "felinid", "mammal")
+	recommended_species = list(SPECIES_HUMAN, SPECIES_SYNTHHUMAN, SPECIES_FELINE, SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL, SPECIES_GHOUL)
 	organ_type = /obj/item/organ/tail/cat
 
 /datum/sprite_accessory/tails/monkey/default
 	name = "Monkey"
 	icon_state = "monkey"
 	icon = 'icons/mob/mutant_bodyparts.dmi'
-	recommended_species = list("human", "felinid", "mammal", "monkey")
+	recommended_species = list(SPECIES_HUMAN, SPECIES_SYNTHHUMAN, SPECIES_FELINE, SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL, SPECIES_MONKEY, SPECIES_GHOUL)
 	color_src = FALSE
 	organ_type = /obj/item/organ/tail/monkey
 
 /datum/sprite_accessory/tails/is_hidden(mob/living/carbon/human/H, obj/item/bodypart/HD)
-	if(H.wear_suit && (H.wear_suit.flags_inv & HIDEJUMPSUIT))
-		if(istype(H.wear_suit, /obj/item/clothing/suit/space/hardsuit))
-			var/obj/item/clothing/suit/space/hardsuit/HS = H.wear_suit
-			if(HS.hardsuit_tail_colors)
-				return FALSE
-		return TRUE
+	if(H.wear_suit)
+		if(H.try_hide_mutant_parts)
+			return TRUE
+		if(H.wear_suit.flags_inv & HIDEJUMPSUIT)
+			if(istype(H.wear_suit, /obj/item/clothing/suit/space/hardsuit))
+				var/obj/item/clothing/suit/space/hardsuit/HS = H.wear_suit
+				if(HS.hardsuit_tail_colors)
+					return FALSE
+			return TRUE
+	if(H.owned_turf)  //we do a lil' emoting
+		var/list/used_in_turf = list("tail")
+		if(H.owned_turf.name in used_in_turf)
+			return TRUE
 	return FALSE
 
 /datum/sprite_accessory/tails/none
 	name = "None"
 	icon_state = "none"
-	recommended_species = list("mammal", "human", "humanoid")
+	recommended_species = list(SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL, SPECIES_HUMAN, SPECIES_SYNTHHUMAN, SPECIES_HUMANOID, SPECIES_GHOUL)
 	color_src = null
 	factual = FALSE
 
 /datum/sprite_accessory/tails/mammal
 	icon_state = "none"
-	recommended_species = list("mammal", "human", "humanoid")
-	icon = 'modular_skyrat/modules/customization/icons/mob/sprite_accessory/tails.dmi'
+	recommended_species = list(SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL,SPECIES_HUMAN, SPECIES_SYNTHHUMAN, SPECIES_HUMANOID, SPECIES_GHOUL)
+	icon = 'modular_skyrat/master_files/icons/mob/sprite_accessory/tails.dmi'
 	organ_type = /obj/item/organ/tail/fluffy/no_wag
 	color_src = USE_MATRIXED_COLORS
 
@@ -90,20 +98,31 @@
 	organ_type = /obj/item/organ/tail/fluffy
 
 /datum/sprite_accessory/tails/mammal/wagging/vulpkanin
-	recommended_species = list("mammal", "human", "vulpkanin", "humanoid")
+	recommended_species = list(SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL, SPECIES_HUMAN, SPECIES_SYNTHHUMAN, SPECIES_VULP, SPECIES_HUMANOID, SPECIES_GHOUL)
 	general_type = "vulpine"
 
 /datum/sprite_accessory/tails/mammal/wagging/tajaran
-	recommended_species = list("mammal", "human", "tajaran", "humanoid")
+	recommended_species = list(SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL, SPECIES_HUMAN, SPECIES_SYNTHHUMAN, SPECIES_TAJARAN, SPECIES_HUMANOID, SPECIES_GHOUL)
 	general_type = "feline"
 
 /datum/sprite_accessory/tails/mammal/wagging/akula
-	recommended_species = list("mammal", "human", "akula", "aquatic", "humanoid")
+	recommended_species = list(SPECIES_SYNTHMAMMAL, SPECIES_MAMMAL, SPECIES_HUMAN, SPECIES_SYNTHHUMAN, SPECIES_AKULA, SPECIES_AQUATIC, SPECIES_HUMANOID, SPECIES_GHOUL)
+	general_type = "marine"
+
+/datum/sprite_accessory/tails/mammal/wagging/avian1
+	name = "Avian (alt 1)"
+	icon_state = "avian1"
+	general_type = "avian"
+
+/datum/sprite_accessory/tails/mammal/wagging/avian2
+	name = "Avian (alt 2)"
+	icon_state = "avian2"
+	general_type = "avian"
 
 /datum/sprite_accessory/tails/mammal/wagging/axolotl
 	name = "Axolotl"
 	icon_state = "axolotl"
-	general_type = "lizard"
+	general_type = "axolotl"
 
 /datum/sprite_accessory/tails/mammal/wagging/batl
 	name = "Bat (Long)"
@@ -114,6 +133,10 @@
 	name = "Bat (Short)"
 	icon_state = "bats"
 	general_type = "feline"
+
+/datum/sprite_accessory/tails/mammal/wagging/cable
+	name = "Cable"
+	icon_state = "cable"
 
 /datum/sprite_accessory/tails/mammal/wagging/bee
 	name = "Bee"
@@ -132,6 +155,7 @@
 /datum/sprite_accessory/tails/mammal/wagging/corvid
 	name = "Corvid"
 	icon_state = "crow"
+	general_type = "avian"
 
 /datum/sprite_accessory/tails/mammal/wagging/cow
 	name = "Cow"
@@ -156,15 +180,28 @@
 /datum/sprite_accessory/tails/mammal/wagging/fish
 	name = "Fish"
 	icon_state = "fish"
+	general_type = "marine"
 
 /datum/sprite_accessory/tails/mammal/wagging/vulpkanin/fox
 	name = "Fox"
 	icon_state = "fox"
 	general_type = "vulpine"
 
+/datum/sprite_accessory/tails/mammal/wagging/vulpkanin/fox2
+	name = "Fox (Alt 2)"
+	icon_state = "fox2"
+	general_type = "vulpine"
+
+/datum/sprite_accessory/tails/mammal/wagging/vulpkanin/fox3
+	name = "Fox (Alt 3)"
+	icon_state = "fox3"
+	general_type = "vulpine"
+
 /datum/sprite_accessory/tails/mammal/wagging/hawk
 	name = "Hawk"
 	icon_state = "hawk"
+	general_type = "avian"
+
 
 /datum/sprite_accessory/tails/mammal/wagging/horse
 	name = "Horse"
@@ -175,6 +212,7 @@
 /datum/sprite_accessory/tails/mammal/wagging/husky
 	name = "Husky"
 	icon_state = "husky"
+	general_type = "shepherdlike"
 
 /datum/sprite_accessory/tails/mammal/wagging/insect
 	name = "Insect"
@@ -183,6 +221,7 @@
 /datum/sprite_accessory/tails/mammal/wagging/kangaroo
 	name = "kangaroo"
 	icon_state = "kangaroo"
+	general_type = "straighttail"
 
 /datum/sprite_accessory/tails/mammal/wagging/kitsune
 	name = "Kitsune"
@@ -192,6 +231,11 @@
 /datum/sprite_accessory/tails/mammal/wagging/lab
 	name = "Lab"
 	icon_state = "lab"
+
+/datum/sprite_accessory/tails/mammal/wagging/leopard
+	name = "Leopard"
+	icon_state = "leopard"
+	general_type = "feline"
 
 /*/datum/sprite_accessory/tails/mammal/wagging/ltiger //icon = 'icons/mob/mutant_bodyparts.dmi'
 	name = "Light Tiger"
@@ -206,10 +250,12 @@
 /datum/sprite_accessory/tails/mammal/wagging/orca
 	name = "Orca"
 	icon_state = "orca"
+	general_type = "marine"
 
 /datum/sprite_accessory/tails/mammal/wagging/otie
 	name = "Otusian"
 	icon_state = "otie"
+	general_type = "straighttail"
 
 /datum/sprite_accessory/tails/mammal/wagging/rabbit
 	name = "Rabbit"
@@ -227,14 +273,17 @@
 /datum/sprite_accessory/tails/mammal/wagging/sergal
 	name = "Sergal"
 	icon_state = "sergal"
+	general_type = "shepherdlike"
 
 /datum/sprite_accessory/tails/mammal/wagging/akula/shark
 	name = "Shark"
 	icon_state = "shark"
+	general_type = "marine"
 
 /datum/sprite_accessory/tails/mammal/wagging/shepherd
 	name = "Shepherd"
 	icon_state = "shepherd"
+	general_type = "shepherdlike"
 
 /datum/sprite_accessory/tails/mammal/wagging/skunk
 	name = "Skunk"
@@ -248,6 +297,7 @@
 /datum/sprite_accessory/tails/mammal/wagging/straighttail
 	name = "Straight Tail"
 	icon_state = "straighttail"
+	general_type = "straighttail"
 
 /datum/sprite_accessory/tails/mammal/wagging/squirrel
 	name = "Squirrel"
@@ -267,19 +317,22 @@
 	icon_state = "tiger"
 	general_type = "feline"
 
+
 /datum/sprite_accessory/tails/mammal/wagging/wolf
 	name = "Wolf"
 	icon_state = "wolf"
 	color_src = USE_ONE_COLOR
+	general_type = "shepherdlike"
 
 /datum/sprite_accessory/tails/mammal/wagging/guilmon
 	name = "Guilmon"
 	icon_state = "guilmon"
-	general_type = "lizard"
+	general_type = SPECIES_LIZARD
 
 /datum/sprite_accessory/tails/mammal/wagging/akula/sharknofin
 	name = "Shark no fin"
 	icon_state = "sharknofin"
+	general_type = "marine"
 
 /datum/sprite_accessory/tails/mammal/raptor
     name = "Raptor"
