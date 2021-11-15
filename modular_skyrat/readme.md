@@ -292,7 +292,7 @@ Top most folder: module_id
 
 The readme should go into the parent folder, module_id.
 
-DO NOT MIX AND MATCH FILE TYPES IN FOLDERS!
+**DO NOT MIX AND MATCH FILE TYPES IN FOLDERS!**
 
 ## Exemplary PR's
 
